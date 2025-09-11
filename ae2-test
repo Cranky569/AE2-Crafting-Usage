@@ -17,14 +17,10 @@ function getItemStorage()
         usedItems = bridge.getUsedItemStorage()
         maxItems = bridge.getTotalItemStorage()
 
-        local drives = bridge.getDrives() or {}
-        for _, drive in pairs(drives) do
-            if drive.cells then
-                for _, cell in pairs(drive.cells) do
-                    if cell.type == "ITEM_STORAGE" then
-                        cells = cells + 1
-                    end
-                end
+        local allCells = bridge.getCells() or {}
+        for _, cell in pairs(allCells) do
+            if cell.type == "ITEM_STORAGE" then
+                cells = cells + 1
             end
         end
     end
@@ -39,20 +35,15 @@ function getFluidStorage()
         usedFluids = bridge.getUsedFluidStorage()
         maxFluids = bridge.getTotalFluidStorage()
 
-        local drives = bridge.getDrives() or {}
-        for _, drive in pairs(drives) do
-            if drive.cells then
-                for _, cell in pairs(drive.cells) do
-                    if cell.type == "FLUID_STORAGE" then
-                        cells = cells + 1
-                    end
-                end
+        local allCells = bridge.getCells() or {}
+        for _, cell in pairs(allCells) do
+            if cell.type == "FLUID_STORAGE" then
+                cells = cells + 1
             end
         end
     end
     return usedFluids, maxFluids, cells
 end
-
 -- Function to calculate chemical storage and count chemical cells
 function getChemicalStorage()
     local usedGases, maxGases, cells = 0, 0, 0
@@ -61,14 +52,10 @@ function getChemicalStorage()
         usedGases = bridge.getUsedChemicalStorage()
         maxGases = bridge.getTotalChemicalStorage()
 
-        local drives = bridge.getDrives() or {}
-        for _, drive in pairs(drives) do
-            if drive.cells then
-                for _, cell in pairs(drive.cells) do
-                    if cell.type == "CHEMICAL_STORAGE" then
-                        cells = cells + 1
-                    end
-                end
+        local allCells = bridge.getCells() or {}
+        for _, cell in pairs(allCells) do
+            if cell.type == "CHEMICAL_STORAGE" then
+                cells = cells + 1
             end
         end
     end
