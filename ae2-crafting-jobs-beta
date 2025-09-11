@@ -4,7 +4,7 @@ local me = peripheral.find("me_bridge")
 if not mon then error("Kein Monitor gefunden!") end
 if not me then error("Keine ME-Bridge gefunden!") end
 
--- Funktion zum Formatieren großer Zahlen mit K, M, G
+-- Funktion zum Formatieren großer Zahlen
 local function formatBytes(bytes)
     if bytes >= 1000000000 then
         return string.format("%.2fG", bytes / 1000000000)
@@ -17,12 +17,7 @@ local function formatBytes(bytes)
     end
 end
 
--- Monitor vorbereiten
-mon.clear()
-mon.setTextScale(1)
-mon.setBackgroundColor(colors.black)
-mon.setTextColor(colors.white)
-
+-- Text zentriert auf dem Monitor schreiben
 local function writeCentered(text, y, color)
     local w, _ = mon.getSize()
     local x = math.floor((w - #text) / 2) + 1
@@ -32,30 +27,111 @@ local function writeCentered(text, y, color)
     mon.setTextColor(colors.white)
 end
 
-while true do
+-- Progressbar zeichnen
+local function drawProgressBar(percent, y)
+    local w, _ = mon.getSize()
+    local barWidth = math.floor(w * 0.6) -- 60% des Monitors
+    local filled = math.floor(barWidth * percent)
+    local empty = barWidth - filled
+    local bar = string.rep("█", filled) .. string.rep("░", empty)
+    local text = string.format("Stored Energy: %d%%", math.floor(percent*100))
+    mon.setCursorPos(math.floor((w - #bar) / 2) + 1, y)
+    mon.setTextColor(colors.lime)
+    mon.write(bar)
+    mon.setTextColor(colors.white)
+    mon.setCursorPos(math.floor((w - #text) / 2) + 1, y+1)
+    mon.write(text)
+end
+
+-- Monitor vorbereiten
+local function prepareMonitor()
     mon.clear()
+    mon.setTextScale(1)
+    mon.setBackgroundColor(colors.black)
+    mon.setTextColor(colors.white)
+end
+
+-- Monitor leeren
+local function clearMonitor()
+    local w, h = mon.getSize()
+    for y=1,h do
+        mon.setCursorPos(1,y)
+        mon.clearLine()
+    end
+end
+
+-- CPU Anzeige
+local function displayCPUs()
+    clearMonitor()
     local y = 1
-    writeCentered("AE2 Energy Monitor", y, colors.yellow)
+    writeCentered("AE2 Crafting & Energy Monitor", y)
     y = y + 2
 
-    local ok, usage = pcall(me.getEnergyUsage)
-    if ok then
-        writeCentered("Energy Usage: " .. formatBytes(usage) .. " RF/t", y, colors.red)
-        y = y + 1
-    else
-        writeCentered("Energy Usage: Error", y, colors.red)
-        y = y + 1
+    local cpus = me.getCraftingCPUs()
+    if not cpus or #cpus == 0 then
+        writeCentered("Keine Crafting CPUs gefunden.", y)
+        return
     end
 
-    -- AvgPowerInjection zeigt derzeit Fehler an; daher optional auskommentiert
-    -- local ok2, injection = pcall(me.getAvgPowerInjection)
-    -- if ok2 then
-    --     writeCentered("Avg Power Injection: " .. formatBytes(injection) .. " RF/t", y, colors.green)
-    --     y = y + 1
-    -- else
-    --     writeCentered("Avg Power Injection: Error", y, colors.green)
-    --     y = y + 1
-    -- end
+    -- CPUs nach Ready / Busy sortieren
+    table.sort(cpus, function(a, b)
+        return (a.isBusy == false and b.isBusy == true)
+    end)
 
+    for i, cpu in ipairs(cpus) do
+        -- CPU Nummer
+        writeCentered("CPU " .. i, y)
+        y = y + 1
+
+        -- Status Zeile
+        local statusText = cpu.isBusy and "Busy" or "Ready"
+        local statusColor = cpu.isBusy and colors.red or colors.green
+        local line = string.format("%s | Storage: %s", statusText, formatBytes(cpu.storage))
+
+        local w, _ = mon.getSize()
+        local x = math.floor((w - #line) / 2) + 1
+        mon.setCursorPos(x, y)
+        mon.setTextColor(statusColor)
+        mon.write(statusText)
+        mon.setTextColor(colors.white)
+        mon.write(string.sub(line, #statusText + 1))
+        y = y + 1
+
+        -- CoProc nur bei Ready CPUs
+        if not cpu.isBusy then
+            writeCentered("CoProc: " .. cpu.coProcessors, y)
+            y = y + 1
+        end
+
+        -- Item & Quantity für Busy CPUs
+        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
+            local fullName = cpu.craftingJob.resource.name or "Unknown"
+            local itemName = fullName:match(":(.+)$") or fullName
+            local qty = cpu.craftingJob.quantity or 0
+            writeCentered("Item: " .. itemName, y, colors.yellow)
+            y = y + 1
+            writeCentered("Quantity: " .. qty, y)
+            y = y + 2
+        else
+            y = y + 1
+        end
+
+        if y > select(2, mon.getSize()) then break end
+    end
+
+    -- Energy Usage & Stored Energy
+    local usage = me.getEnergyUsage() or 0
+    writeCentered("Energy Usage: " .. usage .. " RF/t", y)
+    y = y + 2
+
+    local stored = me.getStoredEnergy() or 0
+    local capacity = me.getEnergyCapacity() or 1
+    local percent = stored / capacity
+    drawProgressBar(percent, y)
+end
+
+prepareMonitor()
+while true do
+    displayCPUs()
     sleep(2)
 end
