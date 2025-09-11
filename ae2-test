@@ -10,7 +10,7 @@ function formatBytes(bytes)
 end
 
 -- Function to calculate free item storage
-function getItemStorage()
+function getTotalItemStorage()
     local usedItems, maxItems = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
@@ -21,7 +21,7 @@ function getItemStorage()
 end
 
 -- Function to calculate free fluid storage
-function getFluidStorage()
+function getTotalFluidStorage()
     local usedFluids, maxFluids = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
