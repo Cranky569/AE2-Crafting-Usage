@@ -4,14 +4,14 @@ local me = peripheral.find("me_bridge")
 if not mon then error("Kein Monitor gefunden!") end
 if not me then error("Keine ME-Bridge gefunden!") end
 
--- Funktion zum Formatieren großer Zahlen mit K, M, G
+-- Funktion zum Formatieren großer Zahlen
 local function formatBytes(bytes)
-    if bytes >= 1000000000 then
-        return string.format("%.2fG", bytes / 1000000000)
-    elseif bytes >= 1000000 then
-        return string.format("%.2fM", bytes / 1000000)
-    elseif bytes >= 1000 then
-        return string.format("%.2fK", bytes / 1000)
+    if bytes >= 1e9 then
+        return string.format("%.2fG", bytes / 1e9)
+    elseif bytes >= 1e6 then
+        return string.format("%.2fM", bytes / 1e6)
+    elseif bytes >= 1e3 then
+        return string.format("%.2fK", bytes / 1e3)
     else
         return tostring(bytes)
     end
@@ -35,16 +35,15 @@ local function prepareMonitor()
 end
 
 local function clearMonitor()
-    local w, h = mon.getSize()
-    for y=1,h do
-        mon.setCursorPos(1,y)
+    local _, h = mon.getSize()
+    for y = 1, h do
+        mon.setCursorPos(1, y)
         mon.clearLine()
     end
 end
 
 local function displayCPUs()
     clearMonitor()
-
     local y = 1
     writeCentered("AE2 Crafting Usage Monitor", y)
     y = y + 2
@@ -55,55 +54,51 @@ local function displayCPUs()
         return
     end
 
-    -- Ready-CPUs zuerst
+    -- Sortiere: Ready zuerst
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
 
     for i, cpu in ipairs(cpus) do
-        -- Erste Zeile: CPU Nummer
-        writeCentered("CPU " .. i, y)
+        -- CPU Nummer + Name
+        local cpuName = cpu.name or "Unnamed"
+        writeCentered("CPU " .. i .. " (" .. cpuName .. ")", y)
         y = y + 1
 
         -- Status Zeile
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
-        local line = string.format("%s | Storage: %s", statusText, formatBytes(cpu.storage))
+        local statusLine = string.format("%s | Storage: %s", statusText, formatBytes(cpu.storage))
 
-        local statusLength = #statusText
-        local w, _ = mon.getSize()
-        local x = math.floor((w - #line) / 2) + 1
+        local _, w = mon.getSize()
+        local x = math.floor((w - #statusLine) / 2) + 1
         mon.setCursorPos(x, y)
         mon.setTextColor(statusColor)
         mon.write(statusText)
         mon.setTextColor(colors.white)
-        mon.write(string.sub(line, statusLength + 1))
+        mon.write(string.sub(statusLine, #statusText + 1))
         y = y + 1
 
-        -- CoProc nur für Ready CPUs
+        -- CoProc für Ready CPUs
         if not cpu.isBusy then
             writeCentered("CoProc: " .. cpu.coProcessors, y)
             y = y + 1
         end
 
-        -- Item/Quantity/Progress für Busy CPUs
-        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.getRequestedItem then
-            local resource = cpu.craftingJob:getRequestedItem()
-            local fullName = resource.name or "Unknown"
+        -- Item / Quantity / Crafted-% für Busy CPUs
+        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
+            local fullName = cpu.craftingJob.resource.name or "Unknown"
             local itemName = fullName:match(":(.+)$") or fullName
-            local total = cpu.craftingJob:getTotalItems() or 0
+            local qty = cpu.craftingJob:getTotalItems() or 0
             local done = cpu.craftingJob:getItemProgress() or 0
-            local percent = 0
-            if total > 0 then
-                percent = (done / total) * 100
-            end
+            local percent = (qty > 0) and math.floor((done/qty)*100) or 0
 
             writeCentered("Item: " .. itemName, y, colors.yellow)
             y = y + 1
-            writeCentered(string.format("Quantity: %d | Crafted: %.0f%%", total, percent), y)
+            writeCentered("Quantity: " .. qty .. " | Crafted: " .. percent .. "%", y)
             y = y + 2
         else
-            y = y + 1 -- Leerzeile zwischen CPUs
+            y = y + 1
         end
 
         if y > select(2, mon.getSize()) then break end
