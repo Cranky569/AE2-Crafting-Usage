@@ -1,25 +1,26 @@
--- Funktion, um genutzte, maximale und freie Item-Typen zu bekommen (AE2 = 63 Typen pro Item-Cell)
+-- Funktion, um genutzte, maximale, freie Typen und Anzahl der Item-Cells zu bekommen
 function getItemTypes()
-    local used, max = 0, 0
+    local used, max, free, cellCount = 0, 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local items = bridge.getItems() or {}
-        used = #items  -- tatsächlich genutzte Typen im Netzwerk
+        used = #items
 
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.isItem then
                 max = max + 63
+                cellCount = cellCount + 1
             end
         end
     end
-    local free = max - used
-    return used, max, free
+    free = max - used
+    return used, max, free, cellCount
 end
 
--- Funktion, um genutzte, maximale und freie Fluid-Typen zu bekommen (AE2 = 18 Typen pro Fluid-Cell)
+-- Funktion, um genutzte, maximale, freie Typen und Anzahl der Fluid-Cells zu bekommen
 function getFluidTypes()
-    local used, max = 0, 0
+    local used, max, free, cellCount = 0, 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local fluids = bridge.getFluids() or {}
@@ -29,16 +30,17 @@ function getFluidTypes()
         for _, cell in pairs(cells) do
             if cell.isFluid then
                 max = max + 18
+                cellCount = cellCount + 1
             end
         end
     end
-    local free = max - used
-    return used, max, free
+    free = max - used
+    return used, max, free, cellCount
 end
 
--- Funktion, um genutzte, maximale und freie Chemical-Typen zu bekommen (AE2 = 5 Typen pro Chemical-Cell)
+-- Funktion, um genutzte, maximale, freie Typen und Anzahl der Chemical-Cells zu bekommen
 function getChemicalTypes()
-    local used, max = 0, 0
+    local used, max, free, cellCount = 0, 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local chems = bridge.getChemicals() or {}
@@ -48,11 +50,12 @@ function getChemicalTypes()
         for _, cell in pairs(cells) do
             if cell.isChemical then
                 max = max + 5
+                cellCount = cellCount + 1
             end
         end
     end
-    local free = max - used
-    return used, max, free
+    free = max - used
+    return used, max, free, cellCount
 end
 
 -- Funktion zum Zentrieren von Text auf dem Monitor
@@ -67,7 +70,7 @@ end
 function updateDisplay()
     local monitor = peripheral.find("monitor")
     if not monitor then
-        print("No monitor found.")
+        print("Kein Monitor gefunden.")
         return
     end
 
@@ -78,35 +81,35 @@ function updateDisplay()
         monitor.clear()
 
         -- Items
-        local usedItems, maxItems, freeItems = getItemTypes()
+        local usedItems, maxItems, freeItems, itemCells = getItemTypes()
         local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
         local percentFreeItems = 100 - percentUsedItems
         monitor.setTextColor(colors.yellow)
         centerText(monitor, "Item Types", 1)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
+        centerText(monitor, string.format("Used: %d | Free: %d | Cells: %d", usedItems, freeItems, itemCells), 2)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
 
         -- Fluids
-        local usedFluids, maxFluids, freeFluids = getFluidTypes()
+        local usedFluids, maxFluids, freeFluids, fluidCells = getFluidTypes()
         local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
         local percentFreeFluids = 100 - percentUsedFluids
         monitor.setTextColor(colors.cyan)
         centerText(monitor, "Fluid Types", 5)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 6)
+        centerText(monitor, string.format("Used: %d | Free: %d | Cells: %d", usedFluids, freeFluids, fluidCells), 6)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedFluids, percentFreeFluids), 7)
 
         -- Chemicals
-        local usedChems, maxChems, freeChems = getChemicalTypes()
+        local usedChems, maxChems, freeChems, chemCells = getChemicalTypes()
         local percentUsedChems = (maxChems > 0) and ((usedChems / maxChems) * 100) or 0
         local percentFreeChems = 100 - percentUsedChems
         monitor.setTextColor(colors.purple)
         centerText(monitor, "Chemical Types", 9)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 10)
+        centerText(monitor, string.format("Used: %d | Free: %d | Cells: %d", usedChems, freeChems, chemCells), 10)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedChems, percentFreeChems), 11)
 
         sleep(5)
     end
 end
 
--- Programm starten
+-- Start
 updateDisplay()
