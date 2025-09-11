@@ -1,10 +1,10 @@
--- Function to get used and max item types (AE2 = 63 Types pro Item Cell)
+-- Funktion, um genutzte, maximale und freie Item-Typen zu bekommen (AE2 = 63 Typen pro Item-Cell)
 function getItemTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local items = bridge.getItems() or {}
-        used = #items
+        used = #items  -- tatsächlich genutzte Typen im Netzwerk
 
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
@@ -13,10 +13,11 @@ function getItemTypes()
             end
         end
     end
-    return used, max
+    local free = max - used
+    return used, max, free
 end
 
--- Function to get used and max fluid types (AE2 = 18 Types pro Fluid Cell)
+-- Funktion, um genutzte, maximale und freie Fluid-Typen zu bekommen (AE2 = 18 Typen pro Fluid-Cell)
 function getFluidTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
@@ -31,10 +32,11 @@ function getFluidTypes()
             end
         end
     end
-    return used, max
+    local free = max - used
+    return used, max, free
 end
 
--- Function to get used and max chemical types (AE2 = 5 Types pro Chemical Cell)
+-- Funktion, um genutzte, maximale und freie Chemical-Typen zu bekommen (AE2 = 5 Typen pro Chemical-Cell)
 function getChemicalTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
@@ -49,10 +51,11 @@ function getChemicalTypes()
             end
         end
     end
-    return used, max
+    local free = max - used
+    return used, max, free
 end
 
--- Function to center text on the monitor
+-- Funktion zum Zentrieren von Text auf dem Monitor
 function centerText(monitor, text, line)
     local w, _ = monitor.getSize()
     local x = math.floor((w - #text) / 2)
@@ -60,7 +63,7 @@ function centerText(monitor, text, line)
     monitor.write(text)
 end
 
--- Main program
+-- Hauptprogramm
 function updateDisplay()
     local monitor = peripheral.find("monitor")
     if not monitor then
@@ -75,8 +78,7 @@ function updateDisplay()
         monitor.clear()
 
         -- Items
-        local usedItems, maxItems = getItemTypes()
-        local freeItems = maxItems - usedItems
+        local usedItems, maxItems, freeItems = getItemTypes()
         local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
         local percentFreeItems = 100 - percentUsedItems
         monitor.setTextColor(colors.yellow)
@@ -85,8 +87,7 @@ function updateDisplay()
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
 
         -- Fluids
-        local usedFluids, maxFluids = getFluidTypes()
-        local freeFluids = maxFluids - usedFluids
+        local usedFluids, maxFluids, freeFluids = getFluidTypes()
         local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
         local percentFreeFluids = 100 - percentUsedFluids
         monitor.setTextColor(colors.cyan)
@@ -95,8 +96,7 @@ function updateDisplay()
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedFluids, percentFreeFluids), 7)
 
         -- Chemicals
-        local usedChems, maxChems = getChemicalTypes()
-        local freeChems = maxChems - usedChems
+        local usedChems, maxChems, freeChems = getChemicalTypes()
         local percentUsedChems = (maxChems > 0) and ((usedChems / maxChems) * 100) or 0
         local percentFreeChems = 100 - percentUsedChems
         monitor.setTextColor(colors.purple)
@@ -108,5 +108,5 @@ function updateDisplay()
     end
 end
 
--- Start
+-- Programm starten
 updateDisplay()
