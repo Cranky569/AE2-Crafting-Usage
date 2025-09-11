@@ -18,15 +18,13 @@ local function formatBytes(bytes)
 end
 
 -- Text zentriert auf dem Monitor schreiben
-local function writeCentered(text, y, color, scale)
+local function writeCentered(text, y, color)
     local w, h = mon.getSize()
-    if scale then mon.setTextScale(scale) end
     local x = math.floor((w - #text) / 2) + 1
     mon.setCursorPos(x, y)
     if color then mon.setTextColor(color) end
     mon.write(text)
     mon.setTextColor(colors.white)
-    if scale then mon.setTextScale(1) end
 end
 
 local function prepareMonitor()
@@ -44,10 +42,6 @@ local function clearMonitor()
     end
 end
 
-local function capitalize(str)
-    return str:sub(1,1):upper() .. str:sub(2)
-end
-
 local function displayCPUs()
     clearMonitor()
 
@@ -62,35 +56,17 @@ local function displayCPUs()
         return
     end
 
-    -- CPUs sortieren: Ready zuerst, Busy nach Completion %
-    local readyCPUs = {}
-    local busyCPUs = {}
-
-    for _, cpu in ipairs(cpus) do
-        if cpu.isBusy then
-            table.insert(busyCPUs, cpu)
-        else
-            table.insert(readyCPUs, cpu)
-        end
-    end
-
-    -- Busy nach Completion sortieren (höchste zuerst)
-    table.sort(busyCPUs, function(a, b)
-        local aComp = a.craftingJob and a.craftingJob.completion or 0
-        local bComp = b.craftingJob and b.craftingJob.completion or 0
-        return aComp > bComp
+    -- CPUs nach Busy Status sortieren: Ready (false) zuerst
+    table.sort(cpus, function(a, b)
+        return (a.isBusy == false and b.isBusy == true)
     end)
 
-    local sortedCPUs = {}
-    for _, cpu in ipairs(readyCPUs) do table.insert(sortedCPUs, cpu) end
-    for _, cpu in ipairs(busyCPUs) do table.insert(sortedCPUs, cpu) end
+    for i, cpu in ipairs(cpus) do
+        -- Erste Zeile: CPU Nummer
+        writeCentered("CPU " .. i, y)
+        y = y + 1
 
-    for i, cpu in ipairs(sortedCPUs) do
-        -- Erste Zeile: CPU Nummer größer
-        writeCentered("CPU " .. i, y, colors.white, 1.5)
-        y = y + 2
-
-        -- Zweite Zeile: Status farbig + Storage/CoProc (nur bei Ready)
+        -- Zweite Zeile: Status farbig + Storage, CoProc nur wenn Ready
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
         local line
@@ -115,15 +91,18 @@ local function displayCPUs()
         mon.write(string.sub(line, statusLength + 1))
         y = y + 1
 
-        -- Dritte Zeile: Item + Quantity + Completion %, nur für Busy
+        -- Dritte Zeile: Itemname nur für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
-            local itemName = capitalize(fullName:match(":(.+)$") or fullName)
+            local itemName = fullName:match(":(.+)$") or fullName
+            itemName = itemName:gsub("^%l", string.upper) -- erstes Zeichen groß
+            writeCentered("Item: " .. itemName, y, colors.yellow)
+            y = y + 1
+
+            -- Vierte Zeile: Quantity
             local qty = cpu.craftingJob.quantity or 0
-            local comp = cpu.craftingJob.completion or 0
-            local itemLine = string.format("Item: %s | Quantity: %d | Completion: %.0f%%", itemName, qty, comp * 100)
-            writeCentered(itemLine, y, colors.yellow)
-            y = y + 2
+            writeCentered("Quantity: " .. qty, y)
+            y = y + 2 -- Leerzeile zwischen CPUs
         else
             y = y + 1 -- Leerzeile zwischen CPUs
         end
