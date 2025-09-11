@@ -9,38 +9,56 @@ function formatBytes(bytes)
     end
 end
 
--- Function to calculate free item storage
+-- Function to calculate item storage and count item cells
 function getItemStorage()
     local usedItems, maxItems, cells = 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         usedItems = bridge.getUsedItemStorage()
         maxItems = bridge.getTotalItemStorage()
-        cells = bridge.getTotalItemCells() or 0 -- Anzahl Item-Zellen
+
+        local devices = bridge.getStorageDevices()
+        for _, device in pairs(devices) do
+            if device.type == "ITEM_STORAGE" then
+                cells = cells + 1
+            end
+        end
     end
     return usedItems, maxItems, cells
 end
 
--- Function to calculate free fluid storage
+-- Function to calculate fluid storage and count fluid cells
 function getFluidStorage()
     local usedFluids, maxFluids, cells = 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         usedFluids = bridge.getUsedFluidStorage()
         maxFluids = bridge.getTotalFluidStorage()
-        cells = bridge.getTotalFluidCells() or 0 -- Anzahl Fluid-Zellen
+
+        local devices = bridge.getStorageDevices()
+        for _, device in pairs(devices) do
+            if device.type == "FLUID_STORAGE" then
+                cells = cells + 1
+            end
+        end
     end
     return usedFluids, maxFluids, cells
 end
 
--- Function to calculate free gas storage
+-- Function to calculate chemical storage and count chemical cells
 function getChemicalStorage()
     local usedGases, maxGases, cells = 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         usedGases = bridge.getUsedChemicalStorage()
         maxGases = bridge.getTotalChemicalStorage()
-        cells = bridge.getTotalChemicalCells() or 0 -- Anzahl Chemical-Zellen
+
+        local devices = bridge.getStorageDevices()
+        for _, device in pairs(devices) do
+            if device.type == "CHEMICAL_STORAGE" then
+                cells = cells + 1
+            end
+        end
     end
     return usedGases, maxGases, cells
 end
@@ -87,7 +105,7 @@ function updateDisplay()
         centerText(monitor, string.format("Used: %s | Free: %s | Cells: %d", formatBytes(usedFluids), formatBytes(freeFluids), fluidCells), 6)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedFluids, percentFreeFluids), 7)
 
-        -- Display gas storage
+        -- Display chemical storage
         local usedGases, maxGases, chemicalCells = getChemicalStorage()
         local freeGases = maxGases - usedGases
         local percentUsedGases = (maxGases > 0) and ((usedGases / maxGases) * 100) or 0
