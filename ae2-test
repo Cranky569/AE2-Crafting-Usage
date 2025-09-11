@@ -1,45 +1,55 @@
--- Function to format large numbers into a human-readable format
-function formatBytes(bytes)
-    if bytes >= 1000000 then
-        return string.format("%.1fM", bytes / 1000000)
-    elseif bytes >= 1000 then
-        return string.format("%.1fK", bytes / 1000)
-    else
-        return tostring(bytes)
-    end
-end
-
--- Function to calculate free item storage
-function getTotalItemStorage()
-    local usedItems, maxItems = 0, 0
+-- Function to get used and free item types
+function getItemTypes()
+    local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
-        usedItems = bridge.getUsedItemStorage()
-        maxItems = bridge.getTotalItemStorage()
+        local items = bridge.getItems() or {}
+        used = #items
+        -- AE2 hat normalerweise max. 63 Typen pro Disk, wir holen die Info über getCells()
+        local cells = bridge.getCells() or {}
+        for _, cell in pairs(cells) do
+            if cell.totalBytes then
+                max = max + (cell.totalBytes or 0) -- AE2 reported Types capacity
+            elseif cell.capacity then
+                max = max + (cell.capacity or 0) -- RS reported Types capacity
+            end
+        end
     end
-    return usedItems, maxItems
+    return used, max
 end
 
--- Function to calculate free fluid storage
-function getTotalFluidStorage()
-    local usedFluids, maxFluids = 0, 0
+-- Function to get used and free fluid types
+function getFluidTypes()
+    local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
-        usedFluids = bridge.getUsedFluidStorage()
-        maxFluids = bridge.getTotalFluidStorage()
+        local fluids = bridge.getFluids() or {}
+        used = #fluids
+        local cells = bridge.getCells() or {}
+        for _, cell in pairs(cells) do
+            if cell.type == "fluid" then
+                max = max + (cell.totalBytes or cell.capacity or 0)
+            end
+        end
     end
-    return usedFluids, maxFluids
+    return used, max
 end
 
--- Function to calculate free gas storage
-function getChemicalStorage()
-    local usedGases, maxGases = 0, 0
+-- Function to get used and free chemical types
+function getChemicalTypes()
+    local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
-        usedGases = bridge.getUsedChemicalStorage()
-        maxGases = bridge.getTotalChemicalStorage()
+        local chems = bridge.getChemicals() or {}
+        used = #chems
+        local cells = bridge.getCells() or {}
+        for _, cell in pairs(cells) do
+            if cell.type == "chemical" then
+                max = max + (cell.totalBytes or cell.capacity or 0)
+            end
+        end
     end
-    return usedGases, maxGases
+    return used, max
 end
 
 -- Function to center text on the monitor
@@ -64,39 +74,30 @@ function updateDisplay()
     while true do
         monitor.clear()
 
-        -- Display item storage
-        local usedItems, maxItems = getTotalItemStorage()
-        local freeItems = maxItems - usedItems
-        local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
-        local percentFreeItems = 100 - percentUsedItems
+        -- Items
+        local usedItems, maxItems = getItemTypes()
+        local freeItems = (maxItems > 0) and (maxItems - usedItems) or 0
         monitor.setTextColor(colors.yellow)
-        centerText(monitor, "Item Storage", 1)
-        centerText(monitor, string.format("Used: %s | Free: %s", formatBytes(usedItems), formatBytes(freeItems)), 2)
-        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
+        centerText(monitor, "Item Types", 1)
+        centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
 
-        -- Display fluid storage
-        local usedFluids, maxFluids = getTotalFluidStorage()
-        local freeFluids = maxFluids - usedFluids
-        local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
-        local percentFreeFluids = 100 - percentUsedFluids
+        -- Fluids
+        local usedFluids, maxFluids = getFluidTypes()
+        local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
         monitor.setTextColor(colors.cyan)
-        centerText(monitor, "Fluid Storage", 5)
-        centerText(monitor, string.format("Used: %s | Free: %s", formatBytes(usedFluids), formatBytes(freeFluids)), 6)
-        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedFluids, percentFreeFluids), 7)
+        centerText(monitor, "Fluid Types", 4)
+        centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 5)
 
-        -- Display gas storage
-        local usedGases, maxGases = getChemicalStorage()
-        local freeGases = maxGases - usedGases
-        local percentUsedGases = (maxGases > 0) and ((usedGases / maxGases) * 100) or 0
-        local percentFreeGases = 100 - percentUsedGases
+        -- Chemicals
+        local usedChems, maxChems = getChemicalTypes()
+        local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
         monitor.setTextColor(colors.purple)
-        centerText(monitor, "Chemical Storage", 9)
-        centerText(monitor, string.format("Used: %s | Free: %s", formatBytes(usedGases), formatBytes(freeGases)), 10)
-        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedGases, percentFreeGases), 11)
+        centerText(monitor, "Chemical Types", 7)
+        centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 8)
 
-        sleep(5) -- Wait 5 seconds before updating again
+        sleep(5)
     end
 end
 
--- Start the program
+-- Start
 updateDisplay()
