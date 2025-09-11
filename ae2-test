@@ -1,4 +1,4 @@
--- Function to get used and free item types directly from cells
+-- Hole benutzte und freie Item Types
 function getItemTypes()
     local used, max = 0, 0
     local unlimited = false
@@ -17,7 +17,7 @@ function getItemTypes()
     return used, max, unlimited
 end
 
--- Function to get used and free fluid types directly from cells
+-- Hole benutzte und freie Fluid Types
 function getFluidTypes()
     local used, max = 0, 0
     local unlimited = false
@@ -38,7 +38,7 @@ function getFluidTypes()
     return used, max, unlimited
 end
 
--- Function to get used and free chemical types directly from cells
+-- Hole benutzte und freie Chemical Types
 function getChemicalTypes()
     local used, max = 0, 0
     local unlimited = false
@@ -59,7 +59,7 @@ function getChemicalTypes()
     return used, max, unlimited
 end
 
--- Function to center text on the monitor
+-- Zentriert Text auf Monitor
 function centerText(monitor, text, line)
     local w, _ = monitor.getSize()
     local x = math.floor((w - #text) / 2)
@@ -67,7 +67,7 @@ function centerText(monitor, text, line)
     monitor.write(text)
 end
 
--- Main program
+-- Hauptprogramm
 function updateDisplay()
     local monitor = peripheral.find("monitor")
     if not monitor then
@@ -86,11 +86,12 @@ function updateDisplay()
         monitor.setTextColor(colors.yellow)
         centerText(monitor, "Item Types", 1)
         if unlimitedItems then
-            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedItems), 2)
+            centerText(monitor, string.format("Current stored: %d Types", usedItems), 2)
+            centerText(monitor, "Free: Unlimited", 3)
         else
             local freeItems = (maxItems > 0) and (maxItems - usedItems) or 0
-            centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
-            centerText(monitor, string.format("%.1f%% Used", (usedItems / maxItems) * 100), 3)
+            centerText(monitor, string.format("Current stored: %d Types", usedItems), 2)
+            centerText(monitor, string.format("Free: %d Types", freeItems), 3)
         end
 
         -- Fluids
@@ -98,11 +99,12 @@ function updateDisplay()
         monitor.setTextColor(colors.cyan)
         centerText(monitor, "Fluid Types", 5)
         if unlimitedFluids then
-            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedFluids), 6)
+            centerText(monitor, string.format("Current stored: %d Types", usedFluids), 6)
+            centerText(monitor, "Free: Unlimited", 7)
         else
             local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
-            centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 6)
-            centerText(monitor, string.format("%.1f%% Used", (usedFluids / maxFluids) * 100), 7)
+            centerText(monitor, string.format("Current stored: %d Types", usedFluids), 6)
+            centerText(monitor, string.format("Free: %d Types", freeFluids), 7)
         end
 
         -- Chemicals
@@ -110,11 +112,12 @@ function updateDisplay()
         monitor.setTextColor(colors.purple)
         centerText(monitor, "Chemical Types", 9)
         if unlimitedChems then
-            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedChems), 10)
+            centerText(monitor, string.format("Current stored: %d Types", usedChems), 10)
+            centerText(monitor, "Free: Unlimited", 11)
         else
             local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
-            centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 10)
-            centerText(monitor, string.format("%.1f%% Used", (usedChems / maxChems) * 100), 11)
+            centerText(monitor, string.format("Current stored: %d Types", usedChems), 10)
+            centerText(monitor, string.format("Free: %d Types", freeChems), 11)
         end
 
         sleep(5)
