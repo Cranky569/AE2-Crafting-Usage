@@ -1,26 +1,27 @@
 -- Function to get used and free item types
 function getItemTypes()
     local used, max = 0, 0
+    local unlimited = false
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local items = bridge.getItems() or {}
         used = #items
-        -- AE2 hat normalerweise max. 63 Typen pro Disk, wir holen die Info über getCells()
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.totalBytes then
-                max = max + (cell.totalBytes or 0) -- AE2 reported Types capacity
+                max = max + (cell.totalBytes or 0) -- AE2: max types
             elseif cell.capacity then
-                max = max + (cell.capacity or 0) -- RS reported Types capacity
+                unlimited = true -- RS: no strict type cap
             end
         end
     end
-    return used, max
+    return used, max, unlimited
 end
 
 -- Function to get used and free fluid types
 function getFluidTypes()
     local used, max = 0, 0
+    local unlimited = false
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local fluids = bridge.getFluids() or {}
@@ -28,16 +29,21 @@ function getFluidTypes()
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.type == "fluid" then
-                max = max + (cell.totalBytes or cell.capacity or 0)
+                if cell.totalBytes then
+                    max = max + (cell.totalBytes or 0)
+                elseif cell.capacity then
+                    unlimited = true
+                end
             end
         end
     end
-    return used, max
+    return used, max, unlimited
 end
 
 -- Function to get used and free chemical types
 function getChemicalTypes()
     local used, max = 0, 0
+    local unlimited = false
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local chems = bridge.getChemicals() or {}
@@ -45,14 +51,18 @@ function getChemicalTypes()
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.type == "chemical" then
-                max = max + (cell.totalBytes or cell.capacity or 0)
+                if cell.totalBytes then
+                    max = max + (cell.totalBytes or 0)
+                elseif cell.capacity then
+                    unlimited = true
+                end
             end
         end
     end
-    return used, max
+    return used, max, unlimited
 end
 
--- Function to center text on the monitor
+-- Function to center text
 function centerText(monitor, text, line)
     local w, _ = monitor.getSize()
     local x = math.floor((w - #text) / 2)
@@ -75,25 +85,37 @@ function updateDisplay()
         monitor.clear()
 
         -- Items
-        local usedItems, maxItems = getItemTypes()
-        local freeItems = (maxItems > 0) and (maxItems - usedItems) or 0
+        local usedItems, maxItems, unlimitedItems = getItemTypes()
         monitor.setTextColor(colors.yellow)
         centerText(monitor, "Item Types", 1)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
+        if unlimitedItems then
+            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedItems), 2)
+        else
+            local freeItems = (maxItems > 0) and (maxItems - usedItems) or 0
+            centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
+        end
 
         -- Fluids
-        local usedFluids, maxFluids = getFluidTypes()
-        local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
+        local usedFluids, maxFluids, unlimitedFluids = getFluidTypes()
         monitor.setTextColor(colors.cyan)
         centerText(monitor, "Fluid Types", 4)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 5)
+        if unlimitedFluids then
+            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedFluids), 5)
+        else
+            local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
+            centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 5)
+        end
 
         -- Chemicals
-        local usedChems, maxChems = getChemicalTypes()
-        local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
+        local usedChems, maxChems, unlimitedChems = getChemicalTypes()
         monitor.setTextColor(colors.purple)
         centerText(monitor, "Chemical Types", 7)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 8)
+        if unlimitedChems then
+            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedChems), 8)
+        else
+            local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
+            centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 8)
+        end
 
         sleep(5)
     end
