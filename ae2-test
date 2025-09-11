@@ -9,31 +9,12 @@ function formatBytes(bytes)
     end
 end
 
--- Generic function to count cells of a certain type
-function countCellsOfType(cellType)
+-- Function to count all cells in the ME system
+function countAllCells()
     local bridge = peripheral.find("me_bridge")
     if not bridge then return 0 end
-
-    local cells = bridge.getCells() or {}
-    local count = 0
-
-    for _, cellInfo in pairs(cells) do
-        local cellPeripheral = peripheral.wrap(cellInfo.address)
-        if cellPeripheral then
-            local storedItems = cellPeripheral.getStored() or 0
-            local capacity = cellPeripheral.getCapacity() or 0
-
-            if cellType == "ITEM_STORAGE" and cellPeripheral.getStoredItemCount then
-                count = count + 1
-            elseif cellType == "FLUID_STORAGE" and cellPeripheral.getStoredFluidCount then
-                count = count + 1
-            elseif cellType == "CHEMICAL_STORAGE" and cellPeripheral.getStoredChemicalCount then
-                count = count + 1
-            end
-        end
-    end
-
-    return count
+    local allCells = bridge.getCells() or {}
+    return #allCells -- Anzahl aller Zellen
 end
 
 -- Function to calculate item storage
@@ -42,7 +23,7 @@ function getItemStorage()
     if not bridge then return 0, 0, 0 end
     local used = bridge.getUsedItemStorage() or 0
     local max = bridge.getTotalItemStorage() or 0
-    local cells = countCellsOfType("ITEM_STORAGE")
+    local cells = countAllCells()
     return used, max, cells
 end
 
@@ -52,7 +33,7 @@ function getFluidStorage()
     if not bridge then return 0, 0, 0 end
     local used = bridge.getUsedFluidStorage() or 0
     local max = bridge.getTotalFluidStorage() or 0
-    local cells = countCellsOfType("FLUID_STORAGE")
+    local cells = countAllCells()
     return used, max, cells
 end
 
@@ -62,7 +43,7 @@ function getChemicalStorage()
     if not bridge then return 0, 0, 0 end
     local used = bridge.getUsedChemicalStorage() or 0
     local max = bridge.getTotalChemicalStorage() or 0
-    local cells = countCellsOfType("CHEMICAL_STORAGE")
+    local cells = countAllCells()
     return used, max, cells
 end
 
