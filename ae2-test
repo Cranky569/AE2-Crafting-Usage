@@ -1,48 +1,38 @@
--- Crafting-Status auf Monitor anzeigen (textbasiert)
-
--- Peripherie automatisch finden
+-- Finde die Peripherien
 local bridge = peripheral.find("me_bridge")
+local monitor = peripheral.find("monitor")
+
 if not bridge then
-    print("No ME Bridge found.")
+    print("Keine ME-Bridge gefunden!")
     return
 end
 
-local monitor = peripheral.find("monitor")
 if not monitor then
-    print("No monitor found.")
+    print("Kein Monitor gefunden!")
     return
+end
+
+-- Funktion, die einen Crafting-Job abruft
+function getCraftingJob(id)
+    -- Beispielaufruf: tatsächliche Implementierung hängt von deinem Setup ab
+    local job = bridge.getCraftingJob(id)
+    return job
 end
 
 -- Monitor vorbereiten
-if monitor.setTextScale then
-    monitor.setTextScale(1)
-end
 monitor.clear()
+monitor.setCursorPos(1,1)
+monitor.setTextScale(1) -- optional: Textgröße anpassen
 
--- Funktion: Crafting-Status abrufen und anzeigen
-local function showCraftingStatus()
-    monitor.clear()
-    local tasks = bridge.getCraftingTasks()  -- laufende Crafting-Aufträge
+-- Beispiel: Crafting-Job mit ID 1 abrufen
+local jobID = 1
+local job = getCraftingJob(jobID)
 
-    -- Überschriften
-    monitor.setCursorPos(1,1)
-    monitor.write(string.format("%-20s %-10s %-10s %-10s", "Item", "Crafting", "Scheduled", "Available"))
-
-    local row = 2
-    for _, task in ipairs(tasks) do
-        local label = task.item.label or task.item.id or "Unbekannt"
-        local crafting = task.progress and math.floor(task.progress * 100) or 0
-        local scheduled = task.count or 0
-        local available = bridge.getItemCount(task.item.id) or 0
-
-        monitor.setCursorPos(1, row)
-        monitor.write(string.format("%-20s %-10d %-10d %-10d", label, crafting, scheduled, available))
-        row = row + 1
-    end
-end
-
--- Hauptschleife: alle 5 Sekunden aktualisieren
-while true do
-    showCraftingStatus()
-    sleep(5)
+if job then
+    monitor.write("Crafting Job ID: " .. jobID .. "\n")
+    monitor.write("Status: " .. tostring(job.status) .. "\n")
+    monitor.write("Item: " .. tostring(job.item) .. "\n")
+    monitor.write("Menge: " .. tostring(job.amount) .. "\n")
+else
+    monitor.write("Kein Crafting Job mit ID " .. jobID .. " gefunden.")
 end
