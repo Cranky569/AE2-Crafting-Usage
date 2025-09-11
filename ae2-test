@@ -1,4 +1,4 @@
--- Finde die Peripherien
+-- Peripherien finden
 local bridge = peripheral.find("me_bridge")
 local monitor = peripheral.find("monitor")
 
@@ -14,19 +14,21 @@ end
 
 -- Funktion, die einen Crafting-Job abruft
 function getCraftingJob(id)
-    -- Beispielaufruf: tatsächliche Implementierung hängt von deinem Setup ab
-    local job = bridge.getCraftingJob(id)
+    local job, err = bridge.getCraftingJob(id)
+    if not job then
+        return nil, err
+    end
     return job
 end
 
 -- Monitor vorbereiten
 monitor.clear()
 monitor.setCursorPos(1,1)
-monitor.setTextScale(1) -- optional: Textgröße anpassen
+monitor.setTextScale(1)
 
 -- Beispiel: Crafting-Job mit ID 1 abrufen
 local jobID = 1
-local job = getCraftingJob(jobID)
+local job, err = getCraftingJob(jobID)
 
 if job then
     monitor.write("Crafting Job ID: " .. jobID .. "\n")
@@ -34,5 +36,5 @@ if job then
     monitor.write("Item: " .. tostring(job.item) .. "\n")
     monitor.write("Menge: " .. tostring(job.amount) .. "\n")
 else
-    monitor.write("Kein Crafting Job mit ID " .. jobID .. " gefunden.")
+    monitor.write("Fehler: " .. err)
 end
