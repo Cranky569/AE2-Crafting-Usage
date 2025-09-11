@@ -53,9 +53,16 @@ local function displayCPUs()
             jobText = string.format("ID:%s Item:%s Amt:%d Status:%s", 
                 cpu.craftingJob.id, cpu.craftingJob.item or "Unknown", cpu.craftingJob.amount or 0, cpu.craftingJob.status or "Unknown")
         end
+
+        -- CPU Name nur anzeigen, wenn er nicht "Unnamed" ist
+        local nameText = ""
+        if cpu.name and cpu.name ~= "Unnamed" then
+            nameText = " (" .. cpu.name .. ")"
+        end
+
         mon.write(string.format(
-            "CPU %d (%s) | Busy: %s | Storage: %s | CoProc: %d | Job: %s", 
-            i, cpu.name or "Unnamed", tostring(cpu.isBusy), formatBytes(cpu.storage), cpu.coProcessors, jobText
+            "CPU %d%s | Busy: %s | Storage: %s | CoProc: %d | Job: %s", 
+            i, nameText, tostring(cpu.isBusy), formatBytes(cpu.storage), cpu.coProcessors, jobText
         ))
         y = y + 1
         if y > select(2, mon.getSize()) then break end
