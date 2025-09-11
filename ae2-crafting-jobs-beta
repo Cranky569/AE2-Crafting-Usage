@@ -19,7 +19,7 @@ end
 
 -- Text zentriert auf dem Monitor schreiben
 local function writeCentered(text, y, color)
-    local w, h = mon.getSize()
+    local w, _ = mon.getSize()
     local x = math.floor((w - #text) / 2) + 1
     mon.setCursorPos(x, y)
     if color then mon.setTextColor(color) end
@@ -46,7 +46,6 @@ local function displayCPUs()
     clearMonitor()
 
     local y = 1
-    -- Überschrift
     writeCentered("AE2 Crafting Usage Monitor", y)
     y = y + 2
 
@@ -56,7 +55,6 @@ local function displayCPUs()
         return
     end
 
-    -- CPUs nach Busy Status sortieren: Ready (false) zuerst
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
@@ -66,7 +64,7 @@ local function displayCPUs()
         writeCentered("CPU " .. i, y)
         y = y + 1
 
-        -- Zweite Zeile: Status farbig + Storage, CoProc nur wenn Ready
+        -- Status Zeile
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
         local line
@@ -75,15 +73,14 @@ local function displayCPUs()
                 statusText, formatBytes(cpu.storage)
             )
         else
-            line = string.format("%s | Storage: %s | CoProc: %d",
-                statusText, formatBytes(cpu.storage), cpu.coProcessors
+            line = string.format("%s | Storage: %s",
+                statusText, formatBytes(cpu.storage)
             )
         end
 
         local statusLength = #statusText
         local w, _ = mon.getSize()
         local x = math.floor((w - #line) / 2) + 1
-
         mon.setCursorPos(x, y)
         mon.setTextColor(statusColor)
         mon.write(statusText)
@@ -91,21 +88,25 @@ local function displayCPUs()
         mon.write(string.sub(line, statusLength + 1))
         y = y + 1
 
-        -- Dritte Zeile: Item und Quantity nur für Busy CPUs
+        -- CoProc nur für Ready CPUs in neuer Zeile
+        if not cpu.isBusy then
+            local coProcLine = "CoProc: " .. cpu.coProcessors
+            writeCentered(coProcLine, y)
+            y = y + 1
+        end
+
+        -- Item/Quantity für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
             local itemName = fullName:match(":(.+)$") or fullName
             local qty = cpu.craftingJob.quantity or 0
-            local itemLine = string.format("Item: %s | Quantity: %d", itemName, qty)
+            local completion = cpu.craftingJob.completion or 0
 
-            local w, _ = mon.getSize()
-            local x = math.floor((w - #itemLine) / 2) + 1
-            mon.setCursorPos(x, y)
-            mon.setTextColor(colors.yellow)
-            mon.write("Item: " .. itemName)
-            mon.setTextColor(colors.white)
-            mon.write(" | Quantity: " .. qty)
-
+            -- Itemname
+            writeCentered("Item: " .. itemName, y, colors.yellow)
+            y = y + 1
+            -- Quantity + Crafted %
+            writeCentered(string.format("Quantity: %d | Crafted: %.0f%%", qty, completion * 100), y)
             y = y + 2 -- Leerzeile zwischen CPUs
         else
             y = y + 1 -- Leerzeile zwischen CPUs
