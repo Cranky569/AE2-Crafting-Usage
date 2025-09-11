@@ -1,6 +1,6 @@
 -- ME Crafting Jobs Monitor
 local mon = peripheral.find("monitor")
-local me = peripheral.find("meBridge")
+local me = peripheral.find("me_bridge")
 
 if not mon then
     error("Kein Monitor gefunden!")
