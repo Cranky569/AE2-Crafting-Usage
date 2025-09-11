@@ -1,16 +1,28 @@
--- Script: Crafting-Aufträge auf Monitor anzeigen
+-- Crafting-Aufträge auf Monitor anzeigen (Advanced Peripherals + ME Bridge)
 
--- Periphere Geräte verbinden
-local monitor = peripheral.wrap("right")  -- Monitor auf der rechten Seite
-local storage = peripheral.wrap("back")   -- Refined Storage Controller auf der Rückseite
+-- Peripherie automatisch finden
+local bridge = peripheral.find("me_bridge")
+if not bridge then
+    print("No ME Bridge found.")
+    return
+end
+
+local monitor = peripheral.find("monitor")
+if not monitor then
+    print("No monitor found.")
+    return
+end
 
 -- Monitor vorbereiten
+if monitor.setTextScale then
+    monitor.setTextScale(1)  -- optional, nur wenn unterstützt
+end
 monitor.clear()
 
--- Hilfsfunktion: Crafting-Aufträge abrufen und anzeigen
+-- Funktion: Crafting-Aufträge abrufen und anzeigen
 local function showCraftingTasks()
     monitor.clear()
-    local tasks = storage.getCraftingTasks()  -- alle Crafting-Aufträge abrufen
+    local tasks = bridge.getCraftingTasks()  -- Alle Crafting-Aufträge abrufen
 
     if #tasks == 0 then
         monitor.setCursorPos(1,1)
@@ -20,12 +32,12 @@ local function showCraftingTasks()
 
     monitor.setCursorPos(1,1)
     monitor.write("Aktuelle Crafting-Aufträge:")
-    
+
     for i, task in ipairs(tasks) do
-        local item = task.getItem()
-        local progress = math.floor(task.getProgress() * 100)  -- Fortschritt in %
+        local label = task.label or task.id or "Unbekannt"
+        local progress = math.floor((task.progress or 0) * 100)
         monitor.setCursorPos(1, i+1)
-        monitor.write(i .. ". " .. item.label .. " | Fortschritt: " .. progress .. "%")
+        monitor.write(i .. ". " .. label .. " | Fortschritt: " .. progress .. "%")
     end
 end
 
