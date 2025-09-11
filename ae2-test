@@ -101,4 +101,25 @@ function updateDisplay()
             centerText(monitor, string.format("Used: %d | Free: Unlimited", usedFluids), 6)
         else
             local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
-            centerText(monitor, string.format("Used: %d | Free: %d", use
+            centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 6)
+            centerText(monitor, string.format("%.1f%% Used", (usedFluids / maxFluids) * 100), 7)
+        end
+
+        -- Chemicals
+        local usedChems, maxChems, unlimitedChems = getChemicalTypes()
+        monitor.setTextColor(colors.purple)
+        centerText(monitor, "Chemical Types", 9)
+        if unlimitedChems then
+            centerText(monitor, string.format("Used: %d | Free: Unlimited", usedChems), 10)
+        else
+            local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
+            centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 10)
+            centerText(monitor, string.format("%.1f%% Used", (usedChems / maxChems) * 100), 11)
+        end
+
+        sleep(5)
+    end
+end
+
+-- Start
+updateDisplay()
