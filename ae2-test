@@ -71,7 +71,7 @@ function updateDisplay()
         local percentFreeItems = 100 - percentUsedItems
         monitor.setTextColor(colors.yellow)
         centerText(monitor, "Item Storage", 1)
-        centerText(monitor, string.format("Used: %s | Free: %s", formatBytes(usedItems), formatBytes(freeItems)), 2)
+        centerText(monitor, string.format("Used: %s | Free: %s", formattype(usedItems), formattype(freeItems)), 2)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
 
         -- Display fluid storage
