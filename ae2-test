@@ -65,7 +65,7 @@ function updateDisplay()
         monitor.clear()
 
         -- Display item storage
-        local usedItems, maxItems = getItemStorage()
+        local usedItems, maxItems = getTotalItemStorage()
         local freeItems = maxItems - usedItems
         local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
         local percentFreeItems = 100 - percentUsedItems
@@ -75,7 +75,7 @@ function updateDisplay()
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
 
         -- Display fluid storage
-        local usedFluids, maxFluids = getFluidStorage()
+        local usedFluids, maxFluids = getTotalFluidStorage()
         local freeFluids = maxFluids - usedFluids
         local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
         local percentFreeFluids = 100 - percentUsedFluids
