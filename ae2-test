@@ -73,7 +73,6 @@ local function displayCPUs()
             statusText, formatBytes(cpu.storage), cpu.coProcessors
         )
 
-        -- Status farbig, Rest weiß
         local statusLength = #statusText
         local w, _ = mon.getSize()
         local x = math.floor((w - #line) / 2) + 1
@@ -87,10 +86,22 @@ local function displayCPUs()
 
         -- Dritte Zeile: Item und Quantity nur für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
-            local itemName = cpu.craftingJob.resource.name or "Unknown"
+            local fullName = cpu.craftingJob.resource.name or "Unknown"
+            -- Mod-Präfix entfernen, alles nach dem ":" nutzen
+            local itemName = fullName:match(":(.+)$") or fullName
             local qty = cpu.craftingJob.quantity or 0
             local itemLine = string.format("Item: %s | Quantity: %d", itemName, qty)
-            writeCentered(itemLine, y)
+
+            -- Itemname in Gelb
+            local w, _ = mon.getSize()
+            local x = math.floor((w - #itemLine) / 2) + 1
+            mon.setCursorPos(x, y)
+            -- "Item:" in Gelb
+            mon.setTextColor(colors.yellow)
+            mon.write("Item: " .. itemName)
+            mon.setTextColor(colors.white)
+            mon.write(" | Quantity: " .. qty)
+
             y = y + 2 -- Leerzeile zwischen CPUs
         else
             y = y + 1 -- Leerzeile zwischen CPUs
