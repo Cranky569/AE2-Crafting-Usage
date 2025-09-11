@@ -1,4 +1,49 @@
--- Cancel Button zentriert mit Koordinaten
+local mon = peripheral.find("monitor")
+local me = peripheral.find("me_bridge")
+
+if not mon then error("Kein Monitor gefunden!") end
+if not me then error("Keine ME-Bridge gefunden!") end
+
+local busyJobs = {} -- speichert Busy CPUs für Cancel Buttons
+
+-- Funktion zum Formatieren großer Zahlen
+local function formatBytes(bytes)
+    if bytes >= 1000000000 then
+        return string.format("%.2fG", bytes / 1000000000)
+    elseif bytes >= 1000000 then
+        return string.format("%.2fM", bytes / 1000000)
+    elseif bytes >= 1000 then
+        return string.format("%.2fK", bytes / 1000)
+    else
+        return tostring(bytes)
+    end
+end
+
+-- Text zentriert auf dem Monitor schreiben
+local function writeCentered(text, y, color)
+    local w, _ = mon.getSize()
+    local x = math.floor((w - #text) / 2) + 1
+    mon.setCursorPos(x, y)
+    if color then mon.setTextColor(color) end
+    mon.write(text)
+    mon.setTextColor(colors.white)
+end
+
+local function prepareMonitor()
+    mon.clear()
+    mon.setTextScale(1)
+    mon.setBackgroundColor(colors.black)
+    mon.setTextColor(colors.white)
+end
+
+local function clearMonitor()
+    local w, h = mon.getSize()
+    for y=1,h do
+        mon.setCursorPos(1,y)
+        mon.clearLine()
+    end
+end
+
 local function displayCPUs()
     clearMonitor()
     busyJobs = {}
@@ -18,9 +63,11 @@ local function displayCPUs()
     end)
 
     for i, cpu in ipairs(cpus) do
+        -- CPU Nummer
         writeCentered("CPU " .. i, y)
         y = y + 1
 
+        -- Status Zeile
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
         local line
@@ -39,19 +86,20 @@ local function displayCPUs()
         mon.write(string.sub(line, statusLength + 1))
         y = y + 1
 
+        -- Item und Quantity
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
             local itemName = fullName:match(":(.+)$") or fullName
-            itemName = itemName:gsub("^%l", string.upper)
+            local qty = cpu.craftingJob.quantity or 0
+
+            -- Itemname
             writeCentered("Item: " .. itemName, y, colors.yellow)
             y = y + 1
-
-            local qty = cpu.craftingJob.quantity or 0
-            local comp = cpu.craftingJob.completion or 0
-            writeCentered(string.format("Quantity: %d | Completion: %.0f%%", qty, comp*100), y)
+            -- Quantity
+            writeCentered("Quantity: " .. qty, y)
             y = y + 1
 
-            -- Cancel Button
+            -- Cancel Button zentriert
             local buttonText = "[ CANCEL ]"
             local buttonX = math.floor((w - #buttonText) / 2) + 1
             mon.setCursorPos(buttonX, y)
@@ -59,7 +107,7 @@ local function displayCPUs()
             mon.write(buttonText)
             mon.setTextColor(colors.white)
 
-            -- Busy Job mit Button Koordinaten speichern
+            -- Busy Job mit Button-Koordinaten speichern
             table.insert(busyJobs, {
                 job = cpu.craftingJob,
                 y = y,
@@ -75,7 +123,7 @@ local function displayCPUs()
     end
 end
 
--- Event Loop für Touch
+-- Event-Loop für Monitor-Touch
 local function handleTouch()
     while true do
         local event, side, x, y = os.pullEvent("monitor_touch")
@@ -91,3 +139,14 @@ local function handleTouch()
         end
     end
 end
+
+prepareMonitor()
+parallel.waitForAny(
+    function()
+        while true do
+            displayCPUs()
+            sleep(2)
+        end
+    end,
+    handleTouch
+)
