@@ -66,12 +66,19 @@ local function displayCPUs()
         writeCentered("CPU " .. i, y)
         y = y + 1
 
-        -- Zweite Zeile: Status farbig + Storage/CoProc
+        -- Zweite Zeile: Status farbig + Storage, CoProc nur wenn Ready
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
-        local line = string.format("%s | Storage: %s | CoProc: %d",
-            statusText, formatBytes(cpu.storage), cpu.coProcessors
-        )
+        local line
+        if cpu.isBusy then
+            line = string.format("%s | Storage: %s",
+                statusText, formatBytes(cpu.storage)
+            )
+        else
+            line = string.format("%s | Storage: %s | CoProc: %d",
+                statusText, formatBytes(cpu.storage), cpu.coProcessors
+            )
+        end
 
         local statusLength = #statusText
         local w, _ = mon.getSize()
@@ -87,16 +94,13 @@ local function displayCPUs()
         -- Dritte Zeile: Item und Quantity nur für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
-            -- Mod-Präfix entfernen, alles nach dem ":" nutzen
             local itemName = fullName:match(":(.+)$") or fullName
             local qty = cpu.craftingJob.quantity or 0
             local itemLine = string.format("Item: %s | Quantity: %d", itemName, qty)
 
-            -- Itemname in Gelb
             local w, _ = mon.getSize()
             local x = math.floor((w - #itemLine) / 2) + 1
             mon.setCursorPos(x, y)
-            -- "Item:" in Gelb
             mon.setTextColor(colors.yellow)
             mon.write("Item: " .. itemName)
             mon.setTextColor(colors.white)
