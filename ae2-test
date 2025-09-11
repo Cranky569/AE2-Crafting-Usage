@@ -1,6 +1,6 @@
--- ME Crafting Jobs Monitor
+-- ME Crafting Jobs Monitor (sichere Version)
 local mon = peripheral.find("monitor")
-local me = peripheral.find("me_bridge")
+local me = peripheral.find("meBridge")
 
 if not mon then
     error("Kein Monitor gefunden!")
@@ -32,13 +32,19 @@ end
 -- Alle aktiven Jobs auf Monitor schreiben
 local function displayJobs()
     clearMonitor()
-    local jobs = me.listCraftingJobs()
+    local success, jobs = pcall(function() return me.listCraftingJobs() end)
+
     local y = 2
-    if #jobs == 0 then
-        mon.setCursorPos(1,y)
-        mon.write("Keine aktiven Crafting-Jobs.")
+    if not success or not jobs or #jobs == 0 then
+        mon.setCursorPos(1, y)
+        mon.write("Crafting Jobs: 0")
         return
     end
+
+    mon.setCursorPos(1,y)
+    mon.write("Crafting Jobs: " .. #jobs)
+    y = y + 1
+
     for i, job in ipairs(jobs) do
         local detail, err = me.getCraftingJob(job.id)
         if detail then
