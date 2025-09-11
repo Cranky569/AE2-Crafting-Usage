@@ -1,103 +1,27 @@
--- Function to format large numbers into a human-readable format
-function formatBytes(bytes)
-    if bytes >= 1000000 then
-        return string.format("%.1fM", bytes / 1000000)
-    elseif bytes >= 1000 then
-        return string.format("%.1fK", bytes / 1000)
-    else
-        return tostring(bytes)
-    end
-end
-
--- Function to count all cells in the ME system
-function countAllCells()
+-- Funktion, um die Anzahl der Item-Zellen in allen Drives zu zählen
+function countItemCells()
     local bridge = peripheral.find("me_bridge")
-    if not bridge then return 0 end
-    local allCells = bridge.getCells() or {}
-    return #allCells -- Anzahl aller Zellen
-end
-
--- Function to calculate item storage
-function getItemStorage()
-    local bridge = peripheral.find("me_bridge")
-    if not bridge then return 0, 0, 0 end
-    local used = bridge.getUsedItemStorage() or 0
-    local max = bridge.getTotalItemStorage() or 0
-    local cells = countAllCells()
-    return used, max, cells
-end
-
--- Function to calculate fluid storage
-function getFluidStorage()
-    local bridge = peripheral.find("me_bridge")
-    if not bridge then return 0, 0, 0 end
-    local used = bridge.getUsedFluidStorage() or 0
-    local max = bridge.getTotalFluidStorage() or 0
-    local cells = countAllCells()
-    return used, max, cells
-end
-
--- Function to calculate chemical storage
-function getChemicalStorage()
-    local bridge = peripheral.find("me_bridge")
-    if not bridge then return 0, 0, 0 end
-    local used = bridge.getUsedChemicalStorage() or 0
-    local max = bridge.getTotalChemicalStorage() or 0
-    local cells = countAllCells()
-    return used, max, cells
-end
-
--- Function to center text on the monitor
-function centerText(monitor, text, line)
-    local w, _ = monitor.getSize()
-    local x = math.floor((w - #text) / 2)
-    monitor.setCursorPos(x, line)
-    monitor.write(text)
-end
-
--- Main program
-function updateDisplay()
-    local monitor = peripheral.find("monitor")
-    if not monitor then
-        print("No monitor found.")
-        return
+    if not bridge then
+        print("Kein ME-Bridge gefunden.")
+        return 0
     end
 
-    monitor.setTextScale(1)
-    monitor.clear()
+    local drives = bridge.getDrives() or {}
+    local cellCount = 0
 
-    while true do
-        monitor.clear()
-
-        -- Item Storage
-        local usedItems, maxItems, itemCells = getItemStorage()
-        local freeItems = maxItems - usedItems
-        local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
-        monitor.setTextColor(colors.yellow)
-        centerText(monitor, "Item Storage", 1)
-        centerText(monitor, string.format("Used: %s | Free: %s | Cells: %d", formatBytes(usedItems), formatBytes(freeItems), itemCells), 2)
-        centerText(monitor, string.format("%.1f%% Used", percentUsedItems), 3)
-
-        -- Fluid Storage
-        local usedFluids, maxFluids, fluidCells = getFluidStorage()
-        local freeFluids = maxFluids - usedFluids
-        local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
-        monitor.setTextColor(colors.cyan)
-        centerText(monitor, "Fluid Storage", 5)
-        centerText(monitor, string.format("Used: %s | Free: %s | Cells: %d", formatBytes(usedFluids), formatBytes(freeFluids), fluidCells), 6)
-        centerText(monitor, string.format("%.1f%% Used", percentUsedFluids), 7)
-
-        -- Chemical Storage
-        local usedGases, maxGases, chemicalCells = getChemicalStorage()
-        local freeGases = maxGases - usedGases
-        local percentUsedGases = (maxGases > 0) and ((usedGases / maxGases) * 100) or 0
-        monitor.setTextColor(colors.purple)
-        centerText(monitor, "Chemical Storage", 9)
-        centerText(monitor, string.format("Used: %s | Free: %s | Cells: %d", formatBytes(usedGases), formatBytes(freeGases), chemicalCells), 10)
-        centerText(monitor, string.format("%.1f%% Used", percentUsedGases), 11)
-
-        sleep(5)
+    for _, drive in pairs(drives) do
+        if drive.cells then
+            for _, cell in pairs(drive.cells) do
+                if cell.type == "ITEM_STORAGE" then
+                    cellCount = cellCount + 1
+                end
+            end
+        end
     end
+
+    return cellCount
 end
 
-updateDisplay()
+-- Main
+local items = countItemCells()
+print("Anzahl Item-Zellen in Drives: " .. items)
