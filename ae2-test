@@ -17,10 +17,14 @@ function getItemStorage()
         usedItems = bridge.getUsedItemStorage()
         maxItems = bridge.getTotalItemStorage()
 
-        local devices = bridge.getStorageDevices()
-        for _, device in pairs(devices) do
-            if device.type == "ITEM_STORAGE" then
-                cells = cells + 1
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.cells then
+                for _, cell in pairs(drive.cells) do
+                    if cell.type == "ITEM_STORAGE" then
+                        cells = cells + 1
+                    end
+                end
             end
         end
     end
@@ -35,10 +39,14 @@ function getFluidStorage()
         usedFluids = bridge.getUsedFluidStorage()
         maxFluids = bridge.getTotalFluidStorage()
 
-        local devices = bridge.getStorageDevices()
-        for _, device in pairs(devices) do
-            if device.type == "FLUID_STORAGE" then
-                cells = cells + 1
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.cells then
+                for _, cell in pairs(drive.cells) do
+                    if cell.type == "FLUID_STORAGE" then
+                        cells = cells + 1
+                    end
+                end
             end
         end
     end
@@ -53,10 +61,14 @@ function getChemicalStorage()
         usedGases = bridge.getUsedChemicalStorage()
         maxGases = bridge.getTotalChemicalStorage()
 
-        local devices = bridge.getStorageDevices()
-        for _, device in pairs(devices) do
-            if device.type == "CHEMICAL_STORAGE" then
-                cells = cells + 1
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.cells then
+                for _, cell in pairs(drive.cells) do
+                    if cell.type == "CHEMICAL_STORAGE" then
+                        cells = cells + 1
+                    end
+                end
             end
         end
     end
@@ -115,7 +127,7 @@ function updateDisplay()
         centerText(monitor, string.format("Used: %s | Free: %s | Cells: %d", formatBytes(usedGases), formatBytes(freeGases), chemicalCells), 10)
         centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedGases, percentFreeGases), 11)
 
-        sleep(5) -- Wait 5 seconds before updating again
+        sleep(5)
     end
 end
 
