@@ -1,4 +1,4 @@
--- Crafting-Aufträge auf Monitor anzeigen
+-- Crafting-Status auf Monitor anzeigen (textbasiert)
 
 -- Peripherie automatisch finden
 local bridge = peripheral.find("me_bridge")
@@ -19,30 +19,30 @@ if monitor.setTextScale then
 end
 monitor.clear()
 
--- Funktion: Crafting-Aufträge abrufen und anzeigen
-local function showCraftingTasks()
+-- Funktion: Crafting-Status abrufen und anzeigen
+local function showCraftingStatus()
     monitor.clear()
-    local tasks = bridge.getCraftingTasks()  -- alle Crafting-Aufträge
+    local tasks = bridge.getCraftingTasks()  -- laufende Crafting-Aufträge
 
-    if #tasks == 0 then
-        monitor.setCursorPos(1,1)
-        monitor.write("Keine Crafting-Aufträge aktiv.")
-        return
-    end
-
+    -- Überschriften
     monitor.setCursorPos(1,1)
-    monitor.write("Aktuelle Crafting-Aufträge:")
+    monitor.write(string.format("%-20s %-10s %-10s %-10s", "Item", "Crafting", "Scheduled", "Available"))
 
-    for i, task in ipairs(tasks) do
+    local row = 2
+    for _, task in ipairs(tasks) do
         local label = task.item.label or task.item.id or "Unbekannt"
-        local progress = math.floor((task.progress or 0) * 100)
-        monitor.setCursorPos(1, i+1)
-        monitor.write(i .. ". " .. label .. " | Fortschritt: " .. progress .. "%")
+        local crafting = task.progress and math.floor(task.progress * 100) or 0
+        local scheduled = task.count or 0
+        local available = bridge.getItemCount(task.item.id) or 0
+
+        monitor.setCursorPos(1, row)
+        monitor.write(string.format("%-20s %-10d %-10d %-10d", label, crafting, scheduled, available))
+        row = row + 1
     end
 end
 
 -- Hauptschleife: alle 5 Sekunden aktualisieren
 while true do
-    showCraftingTasks()
+    showCraftingStatus()
     sleep(5)
 end
