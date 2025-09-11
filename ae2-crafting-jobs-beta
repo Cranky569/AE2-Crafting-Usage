@@ -55,6 +55,7 @@ local function displayCPUs()
         return
     end
 
+    -- Ready-CPUs zuerst
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
@@ -67,16 +68,7 @@ local function displayCPUs()
         -- Status Zeile
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
-        local line
-        if cpu.isBusy then
-            line = string.format("%s | Storage: %s",
-                statusText, formatBytes(cpu.storage)
-            )
-        else
-            line = string.format("%s | Storage: %s",
-                statusText, formatBytes(cpu.storage)
-            )
-        end
+        local line = string.format("%s | Storage: %s", statusText, formatBytes(cpu.storage))
 
         local statusLength = #statusText
         local w, _ = mon.getSize()
@@ -88,10 +80,9 @@ local function displayCPUs()
         mon.write(string.sub(line, statusLength + 1))
         y = y + 1
 
-        -- CoProc nur für Ready CPUs in neuer Zeile
+        -- CoProc nur für Ready CPUs
         if not cpu.isBusy then
-            local coProcLine = "CoProc: " .. cpu.coProcessors
-            writeCentered(coProcLine, y)
+            writeCentered("CoProc: " .. cpu.coProcessors, y)
             y = y + 1
         end
 
@@ -110,7 +101,7 @@ local function displayCPUs()
             writeCentered("Item: " .. itemName, y, colors.yellow)
             y = y + 1
             writeCentered(string.format("Quantity: %d | Crafted: %.0f%%", total, percent), y)
-            y = y + 2 -- Leerzeile zwischen CPUs
+            y = y + 2
         else
             y = y + 1 -- Leerzeile zwischen CPUs
         end
