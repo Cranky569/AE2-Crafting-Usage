@@ -76,24 +76,33 @@ function updateDisplay()
 
         -- Items
         local usedItems, maxItems = getItemTypes()
-        local freeItems = (maxItems > 0) and (maxItems - usedItems) or 0
+        local freeItems = maxItems - usedItems
+        local percentUsedItems = (maxItems > 0) and ((usedItems / maxItems) * 100) or 0
+        local percentFreeItems = 100 - percentUsedItems
         monitor.setTextColor(colors.yellow)
         centerText(monitor, "Item Types", 1)
         centerText(monitor, string.format("Used: %d | Free: %d", usedItems, freeItems), 2)
+        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedItems, percentFreeItems), 3)
 
         -- Fluids
         local usedFluids, maxFluids = getFluidTypes()
-        local freeFluids = (maxFluids > 0) and (maxFluids - usedFluids) or 0
+        local freeFluids = maxFluids - usedFluids
+        local percentUsedFluids = (maxFluids > 0) and ((usedFluids / maxFluids) * 100) or 0
+        local percentFreeFluids = 100 - percentUsedFluids
         monitor.setTextColor(colors.cyan)
-        centerText(monitor, "Fluid Types", 4)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 5)
+        centerText(monitor, "Fluid Types", 5)
+        centerText(monitor, string.format("Used: %d | Free: %d", usedFluids, freeFluids), 6)
+        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedFluids, percentFreeFluids), 7)
 
         -- Chemicals
         local usedChems, maxChems = getChemicalTypes()
-        local freeChems = (maxChems > 0) and (maxChems - usedChems) or 0
+        local freeChems = maxChems - usedChems
+        local percentUsedChems = (maxChems > 0) and ((usedChems / maxChems) * 100) or 0
+        local percentFreeChems = 100 - percentUsedChems
         monitor.setTextColor(colors.purple)
-        centerText(monitor, "Chemical Types", 7)
-        centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 8)
+        centerText(monitor, "Chemical Types", 9)
+        centerText(monitor, string.format("Used: %d | Free: %d", usedChems, freeChems), 10)
+        centerText(monitor, string.format("%.1f%% Used | %.1f%% Free", percentUsedChems, percentFreeChems), 11)
 
         sleep(5)
     end
