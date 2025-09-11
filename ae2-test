@@ -17,12 +17,14 @@ local function formatBytes(bytes)
     end
 end
 
--- Funktion, um Text horizontal zu zentrieren
-local function writeCentered(text, y)
+-- Text zentriert auf dem Monitor schreiben
+local function writeCentered(text, y, color)
     local w, h = mon.getSize()
     local x = math.floor((w - #text) / 2) + 1
     mon.setCursorPos(x, y)
+    if color then mon.setTextColor(color) end
     mon.write(text)
+    mon.setTextColor(colors.white) -- danach wieder auf Standardfarbe
 end
 
 local function prepareMonitor()
@@ -54,25 +56,33 @@ local function displayCPUs()
         return
     end
 
-    -- CPUs nach Busy Status sortieren: zuerst nicht busy, dann busy
-    local sorted = {}
-    for _, cpu in ipairs(cpus) do
-        table.insert(sorted, cpu)
-    end
-    table.sort(sorted, function(a, b)
+    -- CPUs nach Busy Status sortieren: Ready (false) zuerst
+    table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
 
-    for _, cpu in ipairs(sorted) do
+    for i, cpu in ipairs(cpus) do
         -- Erste Zeile: CPU Nummer
-        writeCentered("CPU " .. _ , y)
+        writeCentered("CPU " .. i, y)
         y = y + 1
 
-        -- Zweite Zeile: Busy, Storage, CoProc
-        local line = string.format("Busy: %s | Storage: %s | CoProc: %d",
-            tostring(cpu.isBusy), formatBytes(cpu.storage), cpu.coProcessors
+        -- Zweite Zeile: Status farbig + Storage/CoProc weiß
+        local statusText = cpu.isBusy and "Busy" or "Ready"
+        local statusColor = cpu.isBusy and colors.red or colors.green
+        local line = string.format("%s | Storage: %s | CoProc: %d",
+            statusText, formatBytes(cpu.storage), cpu.coProcessors
         )
-        writeCentered(line, y)
+        -- Status farbig, Rest weiß
+        local statusLength = #statusText
+        local w, _ = mon.getSize()
+        local x = math.floor((w - #line) / 2) + 1
+
+        mon.setCursorPos(x, y)
+        mon.setTextColor(statusColor)
+        mon.write(statusText)
+        mon.setTextColor(colors.white)
+        mon.write(string.sub(line, statusLength + 1))
+
         y = y + 2 -- Leerzeile zwischen CPUs
 
         if y > select(2, mon.getSize()) then break end
