@@ -1,4 +1,4 @@
--- Crafting-Aufträge auf Monitor anzeigen (Advanced Peripherals + ME Bridge)
+-- Crafting-Aufträge auf Monitor anzeigen
 
 -- Peripherie automatisch finden
 local bridge = peripheral.find("me_bridge")
@@ -22,7 +22,7 @@ monitor.clear()
 -- Funktion: Crafting-Aufträge abrufen und anzeigen
 local function showCraftingTasks()
     monitor.clear()
-    local tasks = bridge.getCraftingTasks()  -- Alle Crafting-Aufträge abrufen
+    local tasks = bridge.getCraftingTasks()  -- alle Crafting-Aufträge
 
     if #tasks == 0 then
         monitor.setCursorPos(1,1)
@@ -34,9 +34,8 @@ local function showCraftingTasks()
     monitor.write("Aktuelle Crafting-Aufträge:")
 
     for i, task in ipairs(tasks) do
-        local job = bridge.getCraftingJob(task.id)
-        local label = job.output.label or job.output.id or "Unbekannt"
-        local progress = math.floor((job.progress or 0) * 100)
+        local label = task.item.label or task.item.id or "Unbekannt"
+        local progress = math.floor((task.progress or 0) * 100)
         monitor.setCursorPos(1, i+1)
         monitor.write(i .. ". " .. label .. " | Fortschritt: " .. progress .. "%")
     end
