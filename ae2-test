@@ -1,51 +1,51 @@
--- Function to get used and free item types
+-- Function to get used and max item types (nur über Cells)
 function getItemTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local items = bridge.getItems() or {}
-        used = #items
-        -- AE2 hat normalerweise max. 63 Typen pro Disk, wir holen die Info über getCells()
+        used = #items -- Anzahl aktuell gespeicherter Item-Typen
+
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
-            if cell.totalBytes then
-                max = max + (cell.totalBytes or 0) -- AE2 reported Types capacity
-            elseif cell.capacity then
-                max = max + (cell.capacity or 0) -- RS reported Types capacity
+            if cell.isItem and (cell.totalTypes or cell.types) then
+                max = max + (cell.totalTypes or cell.types)
             end
         end
     end
     return used, max
 end
 
--- Function to get used and free fluid types
+-- Function to get used and max fluid types (nur über Cells)
 function getFluidTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local fluids = bridge.getFluids() or {}
-        used = #fluids
+        used = #fluids -- Anzahl aktuell gespeicherter Fluid-Typen
+
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
-            if cell.type == "fluid" then
-                max = max + (cell.totalBytes or cell.capacity or 0)
+            if cell.isFluid and (cell.totalTypes or cell.types) then
+                max = max + (cell.totalTypes or cell.types)
             end
         end
     end
     return used, max
 end
 
--- Function to get used and free chemical types
+-- Function to get used and max chemical types (nur über Cells)
 function getChemicalTypes()
     local used, max = 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
         local chems = bridge.getChemicals() or {}
-        used = #chems
+        used = #chems -- Anzahl aktuell gespeicherter Chemikalien-Typen
+
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
-            if cell.type == "chemical" then
-                max = max + (cell.totalBytes or cell.capacity or 0)
+            if cell.isChemical and (cell.totalTypes or cell.types) then
+                max = max + (cell.totalTypes or cell.types)
             end
         end
     end
