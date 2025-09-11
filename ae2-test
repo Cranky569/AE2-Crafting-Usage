@@ -24,7 +24,7 @@ local function writeCentered(text, y, color)
     mon.setCursorPos(x, y)
     if color then mon.setTextColor(color) end
     mon.write(text)
-    mon.setTextColor(colors.white) -- danach wieder auf Standardfarbe
+    mon.setTextColor(colors.white)
 end
 
 local function prepareMonitor()
@@ -66,12 +66,13 @@ local function displayCPUs()
         writeCentered("CPU " .. i, y)
         y = y + 1
 
-        -- Zweite Zeile: Status farbig + Storage/CoProc weiß
+        -- Zweite Zeile: Status farbig + Storage/CoProc
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
         local line = string.format("%s | Storage: %s | CoProc: %d",
             statusText, formatBytes(cpu.storage), cpu.coProcessors
         )
+
         -- Status farbig, Rest weiß
         local statusLength = #statusText
         local w, _ = mon.getSize()
@@ -82,8 +83,18 @@ local function displayCPUs()
         mon.write(statusText)
         mon.setTextColor(colors.white)
         mon.write(string.sub(line, statusLength + 1))
+        y = y + 1
 
-        y = y + 2 -- Leerzeile zwischen CPUs
+        -- Dritte Zeile: Item und Quantity nur für Busy CPUs
+        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
+            local itemName = cpu.craftingJob.resource.name or "Unknown"
+            local qty = cpu.craftingJob.quantity or 0
+            local itemLine = string.format("Item: %s | Quantity: %d", itemName, qty)
+            writeCentered(itemLine, y)
+            y = y + 2 -- Leerzeile zwischen CPUs
+        else
+            y = y + 1 -- Leerzeile zwischen CPUs
+        end
 
         if y > select(2, mon.getSize()) then break end
     end
