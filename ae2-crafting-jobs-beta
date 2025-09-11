@@ -4,6 +4,9 @@ local me = peripheral.find("me_bridge")
 if not mon then error("Kein Monitor gefunden!") end
 if not me then error("Keine ME-Bridge gefunden!") end
 
+-- Größe des Monitors merken
+local monWidth, monHeight = mon.getSize()
+
 -- Funktion zum Formatieren großer Zahlen
 local function formatBytes(bytes)
     if bytes >= 1e9 then
@@ -17,16 +20,16 @@ local function formatBytes(bytes)
     end
 end
 
--- Text zentriert auf dem Monitor schreiben
+-- Text zentriert schreiben
 local function writeCentered(text, y, color)
-    local w, _ = mon.getSize()
-    local x = math.floor((w - #text) / 2) + 1
+    local x = math.floor((monWidth - #text) / 2) + 1
     mon.setCursorPos(x, y)
     if color then mon.setTextColor(color) end
     mon.write(text)
     mon.setTextColor(colors.white)
 end
 
+-- Monitor vorbereiten
 local function prepareMonitor()
     mon.clear()
     mon.setTextScale(1)
@@ -34,16 +37,20 @@ local function prepareMonitor()
     mon.setTextColor(colors.white)
 end
 
+-- Monitor leeren
 local function clearMonitor()
-    local _, h = mon.getSize()
-    for y = 1, h do
+    for y = 1, monHeight do
         mon.setCursorPos(1, y)
         mon.clearLine()
     end
 end
 
+-- Speichert Button-Positionen für Events
+local buttons = {}
+
 local function displayCPUs()
     clearMonitor()
+    buttons = {} -- Alte Buttons löschen
     local y = 1
     writeCentered("AE2 Crafting Usage Monitor", y)
     y = y + 2
@@ -54,29 +61,19 @@ local function displayCPUs()
         return
     end
 
-    -- Sortiere: Ready zuerst
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
 
     for i, cpu in ipairs(cpus) do
-        -- CPU Nummer + Name
-        local cpuName = cpu.name or "Unnamed"
-        writeCentered("CPU " .. i .. " (" .. cpuName .. ")", y)
+        -- CPU Nummer
+        writeCentered("CPU " .. i, y)
         y = y + 1
 
         -- Status Zeile
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
-        local statusLine = string.format("%s | Storage: %s", statusText, formatBytes(cpu.storage))
-
-        local _, w = mon.getSize()
-        local x = math.floor((w - #statusLine) / 2) + 1
-        mon.setCursorPos(x, y)
-        mon.setTextColor(statusColor)
-        mon.write(statusText)
-        mon.setTextColor(colors.white)
-        mon.write(string.sub(statusLine, #statusText + 1))
+        writeCentered(statusText .. " | Storage: " .. formatBytes(cpu.storage), y, statusColor)
         y = y + 1
 
         -- CoProc für Ready CPUs
@@ -85,28 +82,56 @@ local function displayCPUs()
             y = y + 1
         end
 
-        -- Item / Quantity / Crafted-% für Busy CPUs
+        -- Item / Quantity für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
             local itemName = fullName:match(":(.+)$") or fullName
-            local qty = cpu.craftingJob:getTotalItems() or 0
-            local done = cpu.craftingJob:getItemProgress() or 0
-            local percent = (qty > 0) and math.floor((done/qty)*100) or 0
+            local qty = cpu.craftingJob.quantity or 0
 
             writeCentered("Item: " .. itemName, y, colors.yellow)
             y = y + 1
-            writeCentered("Quantity: " .. qty .. " | Crafted: " .. percent .. "%", y)
+            writeCentered("Quantity: " .. qty, y)
+            y = y + 1
+
+            -- Cancel-Button für Busy CPUs
+            local buttonText = "[ CANCEL ]"
+            local buttonX = math.floor((monWidth - #buttonText) / 2) + 1
+            mon.setCursorPos(buttonX, y)
+            mon.setTextColor(colors.red)
+            mon.write(buttonText)
+            mon.setTextColor(colors.white)
+
+            -- Button-Position speichern
+            buttons[#buttons + 1] = {x1 = buttonX, x2 = buttonX + #buttonText - 1, y = y, cpu = cpu}
+
             y = y + 2
         else
             y = y + 1
         end
 
-        if y > select(2, mon.getSize()) then break end
+        if y > monHeight then break end
     end
 end
 
 prepareMonitor()
+
+-- Event Loop
 while true do
     displayCPUs()
-    sleep(2)
+    local event, side, x, y = os.pullEvent("monitor_touch")
+    for _, button in ipairs(buttons) do
+        if y == button.y and x >= button.x1 and x <= button.x2 then
+            -- Cancel Job ausführen
+            if button.cpu.craftingJob then
+                local ok, err = pcall(function()
+                    button.cpu.craftingJob:cancel()
+                end)
+                if ok then
+                    print("Job abgebrochen.")
+                else
+                    print("Fehler beim abbrechen: " .. tostring(err))
+                end
+            end
+        end
+    end
 end
