@@ -19,7 +19,6 @@ end
 
 local function prepareMonitor()
     mon.clear()
-    local w, h = mon.getSize()
     mon.setCursorPos(1,1)
     mon.setTextScale(1)
     mon.setBackgroundColor(colors.black)
@@ -54,15 +53,10 @@ local function displayCPUs()
                 cpu.craftingJob.id, cpu.craftingJob.item or "Unknown", cpu.craftingJob.amount or 0, cpu.craftingJob.status or "Unknown")
         end
 
-        -- CPU Name nur anzeigen, wenn er nicht "Unnamed" ist
-        local nameText = ""
-        if cpu.name and cpu.name ~= "Unnamed" then
-            nameText = " (" .. cpu.name .. ")"
-        end
-
+        -- Nur CPU-Nummer, Busy, Storage, CoProc, Job
         mon.write(string.format(
-            "CPU %d%s | Busy: %s | Storage: %s | CoProc: %d | Job: %s", 
-            i, nameText, tostring(cpu.isBusy), formatBytes(cpu.storage), cpu.coProcessors, jobText
+            "CPU %d | Busy: %s | Storage: %s | CoProc: %d | Job: %s", 
+            i, tostring(cpu.isBusy), formatBytes(cpu.storage), cpu.coProcessors, jobText
         ))
         y = y + 1
         if y > select(2, mon.getSize()) then break end
