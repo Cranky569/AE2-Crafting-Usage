@@ -1,15 +1,9 @@
--- ME Crafting Jobs Monitor (sichere Version)
 local mon = peripheral.find("monitor")
-local me = peripheral.find("me_bridge")
+local me = peripheral.find("meBridge")
 
-if not mon then
-    error("Kein Monitor gefunden!")
-end
-if not me then
-    error("Keine ME-Bridge gefunden!")
-end
+if not mon then error("Kein Monitor gefunden!") end
+if not me then error("Keine ME-Bridge gefunden!") end
 
--- Monitor vorbereiten
 local function prepareMonitor()
     mon.clear()
     local w, h = mon.getSize()
@@ -17,53 +11,46 @@ local function prepareMonitor()
     mon.setTextScale(1)
     mon.setBackgroundColor(colors.black)
     mon.setTextColor(colors.white)
-    mon.write("ME Crafting Jobs Dashboard")
+    mon.write("AE2 Crafting CPU Dashboard")
 end
 
--- Monitor leeren für neue Daten
 local function clearMonitor()
     local w, h = mon.getSize()
-    for y = 2, h do
+    for y=2,h do
         mon.setCursorPos(1,y)
         mon.clearLine()
     end
 end
 
--- Alle aktiven Jobs auf Monitor schreiben
-local function displayJobs()
+local function displayCPUs()
     clearMonitor()
-    local success, jobs = pcall(function() return me.listCraftingJobs() end)
-
+    local cpus = me.getCraftingCPUs()
     local y = 2
-    if not success or not jobs or #jobs == 0 then
-        mon.setCursorPos(1, y)
-        mon.write("Crafting Jobs: 0")
+
+    if not cpus or #cpus == 0 then
+        mon.setCursorPos(1,y)
+        mon.write("Keine Crafting CPUs gefunden.")
         return
     end
 
-    mon.setCursorPos(1,y)
-    mon.write("Crafting Jobs: " .. #jobs)
-    y = y + 1
-
-    for i, job in ipairs(jobs) do
-        local detail, err = me.getCraftingJob(job.id)
-        if detail then
-            mon.setCursorPos(1,y)
-            mon.write(string.format("ID: %s | Item: %s | Menge: %d | Status: %s", 
-                detail.id, detail.item or "Unknown", detail.amount or 0, detail.status or "Unknown"))
-            y = y + 1
-        else
-            mon.setCursorPos(1,y)
-            mon.write("Fehler beim Abrufen von Job ID " .. job.id .. ": " .. err)
-            y = y + 1
+    for i, cpu in ipairs(cpus) do
+        mon.setCursorPos(1,y)
+        local jobText = "None"
+        if cpu.craftingJob then
+            jobText = string.format("ID:%s Item:%s Amt:%d Status:%s", 
+                cpu.craftingJob.id, cpu.craftingJob.item or "Unknown", cpu.craftingJob.amount or 0, cpu.craftingJob.status or "Unknown")
         end
-        if y > select(2, mon.getSize()) then break end -- Monitor nicht überlaufen
+        mon.write(string.format(
+            "CPU %d (%s) | Busy: %s | Storage: %d | CoProc: %d | Job: %s", 
+            i, cpu.name or "Unnamed", tostring(cpu.isBusy), cpu.storage, cpu.coProcessors, jobText
+        ))
+        y = y + 1
+        if y > select(2, mon.getSize()) then break end
     end
 end
 
--- Hauptloop
 prepareMonitor()
 while true do
-    displayJobs()
-    sleep(2) -- alle 2 Sekunden aktualisieren
+    displayCPUs()
+    sleep(2)
 end
