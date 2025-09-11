@@ -3,13 +3,24 @@ function getItemTypes()
     local used, max, free, cellCount = 0, 0, 0, 0
     local bridge = peripheral.find("me_bridge")
     if bridge then
+        -- Items im Netzwerk
         local items = bridge.getItems() or {}
         used = #items
 
+        -- Alle Zellen prüfen (intern + extern über Drives)
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.isItem then
                 max = max + 63
+                cellCount = cellCount + 1
+            end
+        end
+
+        -- Externe Drives abfragen
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.type == "ITEM" then
+                max = max + 63  -- jede Item-Drive Cell hat 63 Typen
                 cellCount = cellCount + 1
             end
         end
@@ -33,6 +44,14 @@ function getFluidTypes()
                 cellCount = cellCount + 1
             end
         end
+
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.type == "FLUID" then
+                max = max + 18
+                cellCount = cellCount + 1
+            end
+        end
     end
     free = max - used
     return used, max, free, cellCount
@@ -49,6 +68,14 @@ function getChemicalTypes()
         local cells = bridge.getCells() or {}
         for _, cell in pairs(cells) do
             if cell.isChemical then
+                max = max + 5
+                cellCount = cellCount + 1
+            end
+        end
+
+        local drives = bridge.getDrives() or {}
+        for _, drive in pairs(drives) do
+            if drive.type == "CHEMICAL" then
                 max = max + 5
                 cellCount = cellCount + 1
             end
