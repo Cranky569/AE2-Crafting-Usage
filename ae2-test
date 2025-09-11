@@ -15,7 +15,7 @@ end
 
 -- Monitor vorbereiten
 if monitor.setTextScale then
-    monitor.setTextScale(1)  -- optional, nur wenn unterstützt
+    monitor.setTextScale(1)
 end
 monitor.clear()
 
@@ -35,7 +35,7 @@ local function showCraftingTasks()
 
     for i, task in ipairs(tasks) do
         local label = task.label or task.id or "Unbekannt"
-        local progress = math.floor((task.progress or 0) * 100)
+        local progress = math.floor((bridge.getItemProgress(task.id) or 0) * 100)
         monitor.setCursorPos(1, i+1)
         monitor.write(i .. ". " .. label .. " | Fortschritt: " .. progress .. "%")
     end
