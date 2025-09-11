@@ -1,36 +1,63 @@
-local bridge = peripheral.find("me_bridge")
-local monitor = peripheral.find("monitor")
+-- ME Crafting Jobs Monitor
+local mon = peripheral.find("monitor")
+local me = peripheral.find("meBridge")
 
-if not bridge then
-    print("Keine ME-Bridge gefunden!")
-    return
+if not mon then
+    error("Kein Monitor gefunden!")
+end
+if not me then
+    error("Keine ME-Bridge gefunden!")
 end
 
-if not monitor then
-    print("Kein Monitor gefunden!")
-    return
+-- Monitor vorbereiten
+local function prepareMonitor()
+    mon.clear()
+    local w, h = mon.getSize()
+    mon.setCursorPos(1,1)
+    mon.setTextScale(1)
+    mon.setBackgroundColor(colors.black)
+    mon.setTextColor(colors.white)
+    mon.write("ME Crafting Jobs Dashboard")
 end
 
-monitor.clear()
-monitor.setCursorPos(1,1)
-monitor.setTextScale(1)
-
--- Alle aktiven Crafting-Jobs abrufen
-local jobs = bridge.listCraftingJobs()
-
-if #jobs == 0 then
-    monitor.write("Keine aktiven Crafting-Jobs gefunden.")
-else
-    for i, job in ipairs(jobs) do
-        local detailedJob, err = bridge.getCraftingJob(job.id)
-        if detailedJob then
-            monitor.write("Job ID: " .. detailedJob.id .. "\n")
-            monitor.write("Status: " .. tostring(detailedJob.status) .. "\n")
-            monitor.write("Item: " .. tostring(detailedJob.item) .. "\n")
-            monitor.write("Menge: " .. tostring(detailedJob.amount) .. "\n")
-            monitor.write("------------------------\n")
-        else
-            monitor.write("Job ID " .. job.id .. " konnte nicht gefunden werden: " .. err .. "\n")
-        end
+-- Monitor leeren für neue Daten
+local function clearMonitor()
+    local w, h = mon.getSize()
+    for y = 2, h do
+        mon.setCursorPos(1,y)
+        mon.clearLine()
     end
+end
+
+-- Alle aktiven Jobs auf Monitor schreiben
+local function displayJobs()
+    clearMonitor()
+    local jobs = me.listCraftingJobs()
+    local y = 2
+    if #jobs == 0 then
+        mon.setCursorPos(1,y)
+        mon.write("Keine aktiven Crafting-Jobs.")
+        return
+    end
+    for i, job in ipairs(jobs) do
+        local detail, err = me.getCraftingJob(job.id)
+        if detail then
+            mon.setCursorPos(1,y)
+            mon.write(string.format("ID: %s | Item: %s | Menge: %d | Status: %s", 
+                detail.id, detail.item or "Unknown", detail.amount or 0, detail.status or "Unknown"))
+            y = y + 1
+        else
+            mon.setCursorPos(1,y)
+            mon.write("Fehler beim Abrufen von Job ID " .. job.id .. ": " .. err)
+            y = y + 1
+        end
+        if y > select(2, mon.getSize()) then break end -- Monitor nicht überlaufen
+    end
+end
+
+-- Hauptloop
+prepareMonitor()
+while true do
+    displayJobs()
+    sleep(2) -- alle 2 Sekunden aktualisieren
 end
