@@ -5,7 +5,6 @@ local monitor = peripheral.wrap("right")  -- Monitor auf der rechten Seite
 local storage = peripheral.wrap("back")   -- Refined Storage Controller auf der Rückseite
 
 -- Monitor vorbereiten
-monitor.setTextScale(1)
 monitor.clear()
 
 -- Hilfsfunktion: Crafting-Aufträge abrufen und anzeigen
