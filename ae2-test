@@ -1,27 +1,37 @@
--- Funktion, um die Anzahl der Item-Zellen in allen Drives zu zählen
-function countItemCells()
-    local bridge = peripheral.find("me_bridge")
-    if not bridge then
-        print("Kein ME-Bridge gefunden.")
-        return 0
+-- Script: Crafting-Aufträge auf Monitor anzeigen
+
+-- Periphere Geräte verbinden
+local monitor = peripheral.wrap("right")  -- Monitor auf der rechten Seite
+local storage = peripheral.wrap("back")   -- Refined Storage Controller auf der Rückseite
+
+-- Monitor vorbereiten
+monitor.setTextScale(1)
+monitor.clear()
+
+-- Hilfsfunktion: Crafting-Aufträge abrufen und anzeigen
+local function showCraftingTasks()
+    monitor.clear()
+    local tasks = storage.getCraftingTasks()  -- alle Crafting-Aufträge abrufen
+
+    if #tasks == 0 then
+        monitor.setCursorPos(1,1)
+        monitor.write("Keine Crafting-Aufträge aktiv.")
+        return
     end
 
-    local drives = bridge.getDrives() or {}
-    local cellCount = 0
-
-    for _, drive in pairs(drives) do
-        if drive.cells then
-            for _, cell in pairs(drive.cells) do
-                if cell.type == "ITEM_STORAGE" then
-                    cellCount = cellCount + 1
-                end
-            end
-        end
+    monitor.setCursorPos(1,1)
+    monitor.write("Aktuelle Crafting-Aufträge:")
+    
+    for i, task in ipairs(tasks) do
+        local item = task.getItem()
+        local progress = math.floor(task.getProgress() * 100)  -- Fortschritt in %
+        monitor.setCursorPos(1, i+1)
+        monitor.write(i .. ". " .. item.label .. " | Fortschritt: " .. progress .. "%")
     end
-
-    return cellCount
 end
 
--- Main
-local items = countItemCells()
-print("Anzahl Item-Zellen in Drives: " .. items)
+-- Hauptschleife: alle 5 Sekunden aktualisieren
+while true do
+    showCraftingTasks()
+    sleep(5)
+end
