@@ -31,12 +31,20 @@ end
 local function drawProgressBar(progress, y)
     local w, _ = mon.getSize()
     local barWidth = w - 4
+    if barWidth < 1 then barWidth = 1 end
+
+    -- progress normalisieren: falls >1, auf 1 begrenzen
+    if progress > 1 then progress = 1 end
+    if progress < 0 then progress = 0 end
+
     local filled = math.floor(barWidth * progress)
+    local empty = barWidth - filled
+
     mon.setCursorPos(3, y)
     mon.setTextColor(colors.green)
     mon.write(string.rep("|", filled))
     mon.setTextColor(colors.gray)
-    mon.write(string.rep("-", barWidth - filled))
+    mon.write(string.rep("-", empty))
     mon.setTextColor(colors.white)
 end
 
@@ -133,7 +141,10 @@ local function displayCPUs(y)
 
             -- Fortschrittsbalken
             if cpu.craftingJob.progress then
-                drawProgressBar(cpu.craftingJob.progress, y)
+                local progress = cpu.craftingJob.progress
+                -- Progress normalisieren, falls 0-100 statt 0-1
+                if progress > 1 then progress = progress / 100 end
+                drawProgressBar(progress, y)
                 y = y + 1
             end
         end
