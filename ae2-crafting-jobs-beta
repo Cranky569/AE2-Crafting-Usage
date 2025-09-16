@@ -102,17 +102,32 @@ local function displayCPUs()
             y = y + 1
         end
 
-        -- Item/Quantity + Fortschrittsbalken für Busy CPUs
-        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
-            local fullName = cpu.craftingJob.resource.name or "Unknown"
-            local itemName = fullName:match(":(.+)$") or fullName
-            local qty = cpu.craftingJob.quantity or 0
+        -- Scheduled / Crafting / Quantity für Busy CPUs
+        if cpu.isBusy and cpu.craftingJob then
+            -- Scheduled (das Ziel-Item)
+            if cpu.craftingJob.resource then
+                local fullName = cpu.craftingJob.resource.name or "Unknown"
+                local scheduledName = fullName:match(":(.+)$") or fullName
+                writeCentered("Scheduled: " .. scheduledName, y, colors.yellow)
+                y = y + 1
+            end
 
-            -- Ziel-Item
-            writeCentered("Crafting: " .. itemName, y, colors.yellow)
-            y = y + 1
-            writeCentered("Quantity: " .. qty, y)
-            y = y + 1
+            -- Quantity
+            if cpu.craftingJob.quantity then
+                writeCentered("Quantity: " .. cpu.craftingJob.quantity, y)
+                y = y + 1
+            end
+
+            -- Crafting (aktuelles Zwischen-Item)
+            if cpu.craftingJob.currentItem then
+                local fullCurrent = cpu.craftingJob.currentItem.name or "Unknown"
+                local currentName = fullCurrent:match(":(.+)$") or fullCurrent
+                writeCentered("Crafting: " .. currentName, y, colors.lightBlue)
+                y = y + 1
+            else
+                writeCentered("Crafting: Unknown", y, colors.lightBlue)
+                y = y + 1
+            end
 
             -- Fortschrittsbalken
             if cpu.craftingJob.progress then
