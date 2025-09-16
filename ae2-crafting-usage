@@ -27,6 +27,19 @@ local function writeCentered(text, y, color)
     mon.setTextColor(colors.white)
 end
 
+-- Fortschrittsbalken zeichnen
+local function drawProgressBar(progress, y)
+    local w, _ = mon.getSize()
+    local barWidth = w - 4
+    local filled = math.floor(barWidth * progress)
+    mon.setCursorPos(3, y)
+    mon.setTextColor(colors.green)
+    mon.write(string.rep("|", filled))
+    mon.setTextColor(colors.gray)
+    mon.write(string.rep("-", barWidth - filled))
+    mon.setTextColor(colors.white)
+end
+
 local function prepareMonitor()
     mon.clear()
     mon.setTextScale(1)
@@ -36,84 +49,113 @@ end
 
 local function clearMonitor()
     local w, h = mon.getSize()
-    for y=1,h do
-        mon.setCursorPos(1,y)
+    for y = 1, h do
+        mon.setCursorPos(1, y)
         mon.clearLine()
     end
 end
 
-local function displayCPUs()
-    clearMonitor()
+-- Zeigt alle aktuell laufenden Jobs aus den CPUs oben an
+local function displayJobs(y)
+    local cpus = me.getCraftingCPUs()
+    local jobsExist = false
 
-    local y = 1
-    writeCentered("AE2 Crafting Usage Monitor", y)
-    y = y + 2
+    -- Prüfen, ob überhaupt Jobs existieren
+    for _, cpu in ipairs(cpus) do
+        if cpu.craftingJob and cpu.craftingJob.resource then
+            jobsExist = true
+            break
+        end
+    end
 
+    if jobsExist then
+        writeCentered("Aktuelle Crafting Jobs:", y, colors.yellow)
+        y = y + 1
+        for _, cpu in ipairs(cpus) do
+            if cpu.craftingJob and cpu.craftingJob.resource then
+                local fullName = cpu.craftingJob.resource.name or "Unknown"
+                local itemName = fullName:match(":(.+)$") or fullName
+                local qty = cpu.craftingJob.quantity or 0
+                writeCentered(itemName .. " x" .. qty, y, colors.lightBlue)
+                y = y + 1
+            end
+        end
+        y = y + 1
+    else
+        writeCentered("Keine aktiven Crafting Jobs.", y, colors.red)
+        y = y + 2
+    end
+    return y
+end
+
+-- Zeigt die CPUs mit Status, Scheduled Item, Quantity und Progress-Bar
+local function displayCPUs(y)
     local cpus = me.getCraftingCPUs()
     if not cpus or #cpus == 0 then
         writeCentered("Keine Crafting CPUs gefunden.", y)
         return
     end
 
+    -- CPUs sortieren: Ready zuerst, dann Busy
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
 
     for i, cpu in ipairs(cpus) do
-        -- Erste Zeile: CPU Nummer
+        -- CPU Nummer anzeigen
         writeCentered("CPU " .. i, y)
         y = y + 1
 
-        -- Status Zeile
+        -- Status + Storage
         local statusText = cpu.isBusy and "Busy" or "Ready"
         local statusColor = cpu.isBusy and colors.red or colors.green
-        local line
-        if cpu.isBusy then
-            line = string.format("%s | Storage: %s",
-                statusText, formatBytes(cpu.storage)
-            )
-        else
-            line = string.format("%s | Storage: %s",
-                statusText, formatBytes(cpu.storage)
-            )
-        end
-
-        local statusLength = #statusText
-        local w, _ = mon.getSize()
-        local x = math.floor((w - #line) / 2) + 1
-        mon.setCursorPos(x, y)
-        mon.setTextColor(statusColor)
-        mon.write(statusText)
-        mon.setTextColor(colors.white)
-        mon.write(string.sub(line, statusLength + 1))
+        local line = string.format("%s | Storage: %s",
+            statusText, formatBytes(cpu.storage)
+        )
+        writeCentered(line, y, statusColor)
         y = y + 1
 
-        -- CoProc nur für Ready CPUs in neuer Zeile
-        if not cpu.isBusy then
-            local coProcLine = "CoProc: " .. cpu.coProcessors
-            writeCentered(coProcLine, y)
-            y = y + 1
+        -- Scheduled / Quantity / Progress für Busy CPUs
+        if cpu.isBusy and cpu.craftingJob then
+            -- Scheduled Item (das angefragte Zielitem)
+            if cpu.craftingJob.resource then
+                local fullName = cpu.craftingJob.resource.name or "Unknown"
+                local scheduledName = fullName:match(":(.+)$") or fullName
+                writeCentered("Scheduled: " .. scheduledName, y)
+                y = y + 1
+            end
+
+            -- Quantity
+            if cpu.craftingJob.quantity then
+                writeCentered("Quantity: " .. cpu.craftingJob.quantity, y)
+                y = y + 1
+            end
+
+            -- Fortschrittsbalken
+            if cpu.craftingJob.progress then
+                drawProgressBar(cpu.craftingJob.progress, y)
+                y = y + 1
+            end
         end
 
-        -- Item/Quantity für Busy CPUs
-        if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
-            local fullName = cpu.craftingJob.resource.name or "Unknown"
-            local itemName = fullName:match(":(.+)$") or fullName
-            local qty = cpu.craftingJob.quantity or 0
-            writeCentered("Item: " .. itemName, y, colors.yellow)
-            y = y + 1
-            writeCentered("Quantity: " .. qty, y)
-            y = y + 2 -- Leerzeile zwischen CPUs
-        else
-            y = y + 1 -- Leerzeile zwischen CPUs
-        end
-
+        y = y + 1 -- Leerzeile zwischen CPUs
         if y > select(2, mon.getSize()) then break end
     end
 end
 
+-- Hauptanzeige
+local function displayAll()
+    clearMonitor()
+    local y = 1
+    writeCentered("AE2 Crafting Usage Monitor", y)
+    y = y + 2
+    y = displayJobs(y)
+    displayCPUs(y)
+end
+
+-- Start
 prepareMonitor()
 while true do
-    displayCPUs()
+    displayAll()
     sleep(2)
 end
