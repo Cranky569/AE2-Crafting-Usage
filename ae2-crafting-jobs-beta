@@ -1,10 +1,10 @@
 local mon = peripheral.find("monitor")
 local me = peripheral.find("me_bridge")
 
-if not mon then error("Kein Monitor gefunden!") end
-if not me then error("Keine ME-Bridge gefunden!") end
+if not mon then error("No monitor found!") end
+if not me then error("No ME-Bridge found!") end
 
--- Funktion zum Formatieren großer Zahlen mit K, M, G
+-- Function to format large numbers with K, M, G
 local function formatBytes(bytes)
     if bytes >= 1000000000 then
         return string.format("%.2fG", bytes / 1000000000)
@@ -17,7 +17,7 @@ local function formatBytes(bytes)
     end
 end
 
--- Text zentriert auf dem Monitor schreiben
+-- Write text centered on the monitor
 local function writeCentered(text, y, color)
     local w, _ = mon.getSize()
     local x = math.floor((w - #text) / 2) + 1
@@ -27,7 +27,7 @@ local function writeCentered(text, y, color)
     mon.setTextColor(colors.white)
 end
 
--- Fortschrittsbalken zeichnen
+-- Draw a progress bar
 local function drawProgressBar(progress, y)
     local w, _ = mon.getSize()
     local barWidth = math.max(w - 4, 1)
@@ -59,7 +59,7 @@ local function clearMonitor()
     end
 end
 
--- Übersicht aller Jobs aus den CPUs
+-- Display current crafting jobs from CPUs
 local function displayJobs(y)
     local cpus = me.getCraftingCPUs()
     local jobsExist = false
@@ -72,7 +72,7 @@ local function displayJobs(y)
     end
 
     if jobsExist then
-        writeCentered("Aktuelle Crafting Jobs:", y, colors.yellow)
+        writeCentered("Current Crafting Jobs:", y, colors.yellow)
         y = y + 1
         for _, cpu in ipairs(cpus) do
             if cpu.craftingJob and cpu.craftingJob.resource then
@@ -85,21 +85,21 @@ local function displayJobs(y)
         end
         y = y + 1
     else
-        writeCentered("Keine aktiven Crafting Jobs.", y, colors.red)
+        writeCentered("No active crafting jobs.", y, colors.red)
         y = y + 2
     end
     return y
 end
 
--- Anzeige der CPUs mit Status, Storage, Scheduled Item, Quantity, Fortschritt
+-- Display CPUs with status, storage, scheduled item, quantity, and progress
 local function displayCPUs(y)
     local cpus = me.getCraftingCPUs()
     if not cpus or #cpus == 0 then
-        writeCentered("Keine Crafting CPUs gefunden.", y)
+        writeCentered("No crafting CPUs found.", y)
         return
     end
 
-    -- CPUs sortieren: Ready zuerst, dann Busy
+    -- Sort CPUs: Ready first, then Busy
     table.sort(cpus, function(a, b)
         return (a.isBusy == false and b.isBusy == true)
     end)
@@ -135,12 +135,12 @@ local function displayCPUs(y)
             end
         end
 
-        y = y + 1 -- Leerzeile zwischen CPUs
+        y = y + 1 -- empty line between CPUs
         if y > select(2, mon.getSize()) then break end
     end
 end
 
--- Hauptanzeige
+-- Main display function
 local function displayAll()
     clearMonitor()
     local y = 1
