@@ -61,9 +61,8 @@ local function displayCPUs()
     end)
 
     for i, cpu in ipairs(cpus) do
-        -- CPU Name oder Nummer
-        local cpuName = cpu.name or ("CPU " .. i)
-        writeCentered(cpuName, y)
+        -- CPU Nummer anzeigen (nicht den tatsächlichen Namen)
+        writeCentered("CPU " .. i, y)
         y = y + 1
 
         -- Status Zeile
