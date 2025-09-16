@@ -55,16 +55,27 @@ local function clearMonitor()
     end
 end
 
+-- Zeigt alle aktuell laufenden Jobs aus den CPUs oben an
 local function displayJobs(y)
-    local jobs = me.getCraftingJobs()
-    if jobs and #jobs > 0 then
+    local cpus = me.getCraftingCPUs()
+    local jobsExist = false
+
+    -- Prüfen, ob überhaupt Jobs existieren
+    for _, cpu in ipairs(cpus) do
+        if cpu.craftingJob and cpu.craftingJob.resource then
+            jobsExist = true
+            break
+        end
+    end
+
+    if jobsExist then
         writeCentered("Aktuelle Crafting Jobs:", y, colors.yellow)
         y = y + 1
-        for _, job in ipairs(jobs) do
-            if job.name then
-                local fullName = job.name
+        for _, cpu in ipairs(cpus) do
+            if cpu.craftingJob and cpu.craftingJob.resource then
+                local fullName = cpu.craftingJob.resource.name or "Unknown"
                 local itemName = fullName:match(":(.+)$") or fullName
-                local qty = job.quantity or 0
+                local qty = cpu.craftingJob.quantity or 0
                 writeCentered(itemName .. " x" .. qty, y, colors.lightBlue)
                 y = y + 1
             end
@@ -77,6 +88,7 @@ local function displayJobs(y)
     return y
 end
 
+-- Zeigt die CPUs mit Status, Scheduled Item, Quantity und Progress-Bar
 local function displayCPUs(y)
     local cpus = me.getCraftingCPUs()
     if not cpus or #cpus == 0 then
@@ -105,6 +117,7 @@ local function displayCPUs(y)
 
         -- Scheduled / Quantity / Progress für Busy CPUs
         if cpu.isBusy and cpu.craftingJob then
+            -- Scheduled Item (das angefragte Zielitem)
             if cpu.craftingJob.resource then
                 local fullName = cpu.craftingJob.resource.name or "Unknown"
                 local scheduledName = fullName:match(":(.+)$") or fullName
@@ -112,11 +125,13 @@ local function displayCPUs(y)
                 y = y + 1
             end
 
+            -- Quantity
             if cpu.craftingJob.quantity then
                 writeCentered("Quantity: " .. cpu.craftingJob.quantity, y)
                 y = y + 1
             end
 
+            -- Fortschrittsbalken
             if cpu.craftingJob.progress then
                 drawProgressBar(cpu.craftingJob.progress, y)
                 y = y + 1
@@ -128,6 +143,7 @@ local function displayCPUs(y)
     end
 end
 
+-- Hauptanzeige
 local function displayAll()
     clearMonitor()
     local y = 1
@@ -137,6 +153,7 @@ local function displayAll()
     displayCPUs(y)
 end
 
+-- Start
 prepareMonitor()
 while true do
     displayAll()
