@@ -27,6 +27,19 @@ local function writeCentered(text, y, color)
     mon.setTextColor(colors.white)
 end
 
+-- Fortschrittsbalken zeichnen
+local function drawProgressBar(progress, y)
+    local w, _ = mon.getSize()
+    local barWidth = w - 4
+    local filled = math.floor(barWidth * progress)
+    mon.setCursorPos(3, y)
+    mon.setTextColor(colors.green)
+    mon.write(string.rep("|", filled))
+    mon.setTextColor(colors.gray)
+    mon.write(string.rep("-", barWidth - filled))
+    mon.setTextColor(colors.white)
+end
+
 local function prepareMonitor()
     mon.clear()
     mon.setTextScale(1)
@@ -36,8 +49,8 @@ end
 
 local function clearMonitor()
     local w, h = mon.getSize()
-    for y=1,h do
-        mon.setCursorPos(1,y)
+    for y = 1, h do
+        mon.setCursorPos(1, y)
         mon.clearLine()
     end
 end
@@ -61,7 +74,7 @@ local function displayCPUs()
     end)
 
     for i, cpu in ipairs(cpus) do
-        -- CPU Nummer anzeigen (nicht den tatsächlichen Namen)
+        -- CPU Nummer anzeigen
         writeCentered("CPU " .. i, y)
         y = y + 1
 
@@ -82,14 +95,14 @@ local function displayCPUs()
         mon.write(string.sub(line, statusLength + 1))
         y = y + 1
 
-        -- CoProc nur für Ready CPUs in neuer Zeile
+        -- CoProc nur für Ready CPUs
         if not cpu.isBusy then
             local coProcLine = "CoProc: " .. cpu.coProcessors
             writeCentered(coProcLine, y)
             y = y + 1
         end
 
-        -- Item/Quantity + aktuelles Item für Busy CPUs
+        -- Item/Quantity + Fortschrittsbalken für Busy CPUs
         if cpu.isBusy and cpu.craftingJob and cpu.craftingJob.resource then
             local fullName = cpu.craftingJob.resource.name or "Unknown"
             local itemName = fullName:match(":(.+)$") or fullName
@@ -101,15 +114,13 @@ local function displayCPUs()
             writeCentered("Quantity: " .. qty, y)
             y = y + 1
 
-            -- Aktuelles Zwischen-Item
-            if cpu.craftingJob.currentItem then
-                local fullCurrent = cpu.craftingJob.currentItem.name or "Unknown"
-                local currentName = fullCurrent:match(":(.+)$") or fullCurrent
-                writeCentered("Currently: " .. currentName, y, colors.lightBlue)
+            -- Fortschrittsbalken
+            if cpu.craftingJob.progress then
+                drawProgressBar(cpu.craftingJob.progress, y)
                 y = y + 1
             end
 
-            y = y + 2 -- Leerzeile zwischen CPUs
+            y = y + 1 -- Leerzeile zwischen CPUs
         else
             y = y + 1 -- Leerzeile zwischen CPUs
         end
